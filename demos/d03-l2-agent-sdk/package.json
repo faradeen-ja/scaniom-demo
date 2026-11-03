@@ -1,0 +1,1 @@
+{"name":"scaniom-demo-d03","private":true,"type":"module","engines":{"node":">=20"},"dependencies":{"@scaniom/sdk":"0.4.1"}}

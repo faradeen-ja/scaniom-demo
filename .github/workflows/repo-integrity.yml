@@ -1,0 +1,17 @@
+name: Demo repository integrity
+on:
+  push: {branches: [main]}
+  pull_request:
+permissions: {contents: read}
+jobs:
+  integrity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject private-source dependency
+        run: "! grep -R --exclude-dir=.git --exclude='*.md' -nE '(\\.\\./scaniom|/scaniom/scripts/scaniom-cli\\.mjs)' ."
+      - name: Shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' f; do bash -n "$f"; done < <(find . -type f -name '*.sh' -print0)
