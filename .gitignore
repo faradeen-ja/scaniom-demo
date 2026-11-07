@@ -23,3 +23,5 @@ up-patches/*/
 FULL-REPO-MANIFEST.txt
 docs/open-ii-vercel.md
 docs/repo-audit-2026-11-06.md
+
+.open-ii-last-*-backup

@@ -43,4 +43,4 @@ Open `http://localhost:3000`.
 
 All normal future build/fix/update packages go under `up-patches/` and are applied from this repository root. Do not run these Open Immune patches in the private `faradeen-ja/scaniom` product repository.
 
-GitHub/Vercel mutation remains a second stage after local A1 acceptance.
+GitHub push/PR/merge remains a second stage after local A1 acceptance.

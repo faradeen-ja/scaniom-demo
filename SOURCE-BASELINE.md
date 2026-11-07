@@ -17,6 +17,6 @@ That state is deliberate:
 1. Install dependencies locally.
 2. Run local A1 acceptance.
 3. Fix locally until clean.
-4. Only then authorize Stage 2 to create commits/branch/PR, run GitHub/Vercel checks, merge, and deploy.
+4. Only then authorize Stage 2 to create commits/branch/PR, run GitHub integration checks when available, then merge.
 
 Future source changes arrive through repo-local `up-patches/` packages.

@@ -2,7 +2,7 @@
   "name": "open-immune-intelligence",
   "version": "0.1.0",
   "private": true,
-  "description": "Open Immune Intelligence — public engineering experience powered by released Scaniom contracts.",
+  "description": "Open Immune Intelligence \u2014 public engineering experience powered by released Scaniom contracts.",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -14,8 +14,7 @@
     "lint": "eslint app components lib tests next.config.ts --max-warnings=0",
     "test": "tsx --test tests/*.test.ts",
     "audit:open-ii": "node scripts/open-ii-source-audit.mjs",
-    "accept:local": "bash scripts/open-ii-local-acceptance.sh",
-    "ship": "node scripts/open-ii-ship.mjs"
+    "accept:local": "bash scripts/open-ii-local-acceptance.sh"
   },
   "dependencies": {
     "next": "16.4.5",

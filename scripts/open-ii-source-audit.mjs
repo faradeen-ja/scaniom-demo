@@ -41,8 +41,6 @@ for(const p of ["app","components","lib","scripts"]){
   const stack=[dir];while(stack.length){const current=stack.pop();for(const entry of fs.readdirSync(current,{withFileTypes:true})){const full=path.join(current,entry.name);if(entry.isDirectory()){if(entry.name!=="node_modules"&&entry.name!==".next")stack.push(full);}else if(/\.(?:ts|tsx|mjs|sh)$/.test(entry.name)){const source=fs.readFileSync(full,"utf8");if(privateDependency.test(source))errors.push(`${path.relative(root,full)} depends on private Scaniom source`);}}}
 }
 
-need("package.json",['"ship": "node scripts/open-ii-ship.mjs"']);
-need("scripts/open-ii-ship.mjs",["OPEN IMMUNE · FAST SHIP","npm", "accept:local","pr", "checks","--watch","--match-head-commit","OPEN IMMUNE SHIP PASS","base !== \".env.example\"","Resume existing"]);
 
 if(errors.length){console.error("OPEN IMMUNE INTELLIGENCE A0 SOURCE AUDIT FAIL");for(const error of errors)console.error(`- ${error}`);process.exit(1);}
 console.log("OPEN IMMUNE INTELLIGENCE A0 SOURCE AUDIT PASS");
