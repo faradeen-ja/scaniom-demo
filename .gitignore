@@ -3,9 +3,23 @@
 .env.*
 !.env.example
 node_modules/
+.next/
+.patch-backups/
 .venv/
 __pycache__/
 *.pyc
 dist/
 .DS_Store
 *.log
+
+*.tsbuildinfo
+
+# Local acceptance / patch engineering artifacts
+.open-ii-backups/
+.open-ii-acceptance/
+SCANIOM-UP-PATCH-*.zip
+up-patches/*/
+!up-patches/README.md
+FULL-REPO-MANIFEST.txt
+docs/open-ii-vercel.md
+docs/repo-audit-2026-11-06.md

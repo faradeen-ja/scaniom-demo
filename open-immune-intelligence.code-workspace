@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {"path": "."}
+  ],
+  "settings": {
+    "files.exclude": {
+      ".next": true,
+      "node_modules": true,
+      ".demo": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
+  }
+}
