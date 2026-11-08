@@ -48,10 +48,7 @@ export function ScaniomConnection({ compact = false }: { compact?: boolean }) {
   useEffect(() => {
     let cancelled = false;
     void json<Status>("/api/auth/scaniom/status").then((next) => {
-      if (!cancelled) {
-        setStatus(next);
-        setError("");
-      }
+      if (!cancelled) { setStatus(next); setError(""); }
     }).catch((err: unknown) => {
       if (!cancelled) setError(err instanceof Error ? err.message : String(err));
     });
@@ -108,30 +105,34 @@ export function ScaniomConnection({ compact = false }: { compact?: boolean }) {
     window.dispatchEvent(new Event("open-ii-auth-changed"));
   }
 
-  if (!status) return <section className={`connection-card ${compact ? "compact" : ""}`}><span className="state-dot waiting"/>Reading Scaniom profile…</section>;
+  if (!status) return <section className={`connection-card activation-card ${compact ? "compact" : ""}`}><span className="state-dot waiting"/>Reading selected Scaniom profile…</section>;
 
   if (status.signedIn) {
-    return <section className={`connection-card connected ${compact ? "compact" : ""}`}>
-      <div className="connection-head"><div><span className="state-dot ready"/>SCANIOM CONNECTED</div><span>{status.profile.name} · {status.profile.type}</span></div>
-      <div className="identity-grid">
-        <div><small>IDENTITY</small><b>{status.identity?.displayName || status.identity?.email}</b><span>{status.identity?.email}</span></div>
+    return <section className={`connection-card activation-card connected ${compact ? "compact" : ""}`}>
+      <div className="connection-head"><div><span className="state-dot ready"/>SCANIOM AUTHORITY ONLINE</div><span>{status.profile.name} · {status.profile.type}</span></div>
+      <div className="connection-summary">
+        <div><small>PROFILE</small><b>{status.profile.label}</b><span>{status.profile.controlUrl}</span></div>
+        <div><small>OPERATOR</small><b>{status.identity?.displayName || status.identity?.email}</b><span>{status.identity?.email}</span></div>
         <div><small>ORGANIZATION</small><b>{status.identity?.organizationName}</b><span>{String(status.identity?.role || "").replaceAll("_", " ")}</span></div>
-        <div><small>CONTROL</small><b>{status.profile.label}</b><span>{status.profile.controlUrl}</span></div>
       </div>
-      <div className="button-row"><Link className="button secondary" href="/workspace">Open workbench</Link><a className="button ghost" href={`${status.profile.controlUrl}/console`} target="_blank" rel="noreferrer">Scaniom Control</a><button className="button ghost" type="button" onClick={() => void logout()}>Sign out</button></div>
+      <div className="connection-foot"><p>This operator session was approved by the selected Scaniom Control. Environment and workload are the remaining scope choices before a lab can use live authority.</p><div className="button-row"><Link className="button" href="/workbench">Choose a lab</Link><Link className="button secondary" href="/profiles">Profiles</Link><a className="button ghost" href={`${status.profile.controlUrl}/console`} target="_blank" rel="noreferrer">Scaniom Control</a><button className="button ghost" type="button" onClick={() => void logout()}>Sign out</button></div></div>
     </section>;
   }
 
-  return <section className={`connection-card ${compact ? "compact" : ""}`}>
-    <div className="connection-head"><div><span className="state-dot"/>SCANIOM NOT CONNECTED</div><span>{status.profile.name} · {status.profile.type}</span></div>
-    <p>Open Immune uses the selected Scaniom Control profile. Your Scaniom password stays on that Control; this app receives only the approved short-lived operator session.</p>
+  return <section className={`connection-card activation-card ${compact ? "compact" : ""}`}>
+    <div className="connection-head"><div><span className="state-dot waiting"/>AUTHORIZATION REQUIRED</div><span>{status.profile.label} · {status.profile.type}</span></div>
+    <div className="preconnect-grid">
+      <div><small>1 · PROFILE</small><b>{status.profile.label}</b><span>{status.profile.controlUrl}</span><Link href="/profiles">Change or test profile →</Link></div>
+      <div><small>2 · AUTHORIZATION</small><b>Approve Open Immune</b><span>Your password stays on Scaniom Control. Open Immune receives only a short-lived approved operator session.</span></div>
+      <div><small>3 · SCOPE</small><b>Organization → environment → workload</b><span>Those real Scaniom resources become the authority used by every selected Lab or system.</span></div>
+    </div>
     {attempt ? <div className="authorization-box">
       <small>AUTHORIZE OPEN IMMUNE INTELLIGENCE</small>
       <strong>{attempt.userCode}</strong>
-      <p>Open the selected Scaniom Control, sign in if needed, verify this code, then approve the connection.</p>
+      <p>Open the selected Scaniom Control, sign in if needed, verify this code, then approve the connection. This page will update automatically.</p>
       <div className="button-row"><a className="button" href={attempt.authorizeUrl} target="_blank" rel="noreferrer">Open Scaniom Control</a><a className="button ghost" href={attempt.signupUrl} target="_blank" rel="noreferrer">Create account</a><button className="button ghost" type="button" onClick={() => void start()}>Restart authorization</button></div>
       <span className="waiting-copy"><span className="state-dot waiting"/>Waiting for approval…</span>
-    </div> : <div className="button-row"><button className="button" type="button" disabled={phase === "starting"} onClick={() => void start()}>{phase === "starting" ? "Starting…" : "Connect Scaniom"}</button><a className="button secondary" href={status.signupUrl} target="_blank" rel="noreferrer">Sign up</a></div>}
+    </div> : <div className="button-row"><button className="button" type="button" disabled={phase === "starting"} onClick={() => void start()}>{phase === "starting" ? "Starting…" : "Connect Scaniom"}</button><a className="button secondary" href={status.signupUrl} target="_blank" rel="noreferrer">Create Scaniom account</a><Link className="button ghost" href="/profiles">Review profile</Link></div>}
     {error ? <p className="error-box">{error}</p> : null}
   </section>;
 }

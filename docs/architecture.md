@@ -7,25 +7,32 @@ faradeen-ja/scaniom (private product source)
 npm / PyPI / GitHub Release / OCI / Helm / Terraform / CLI
         │
         ▼
-faradeen-ja/scaniom-demo (this public repository)
+faradeen-ja/scaniom-demo
         │
-        ├── Open Immune Intelligence Web
-        │     profile → auth → org → environment/workload → future Fabric workbench
+        ├── OIS Auth · real Scaniom authority
+        │     profile → operator → org → environment → workload
         │
-        ├── D00–D12 + flagship executable labs
-        ├── public artifact verification
-        └── public runbooks
+        ├── Lab Manifest Engine
+        │     D00–D12 + Flagship + system blueprints
+        │
+        ├── Lab Fabric Workbench
+        │     Library → Architecture → Tree · Matrix · Inspector · Intelligence
+        │
+        ├── executable public Lab scripts under demos/
+        ├── public release verification
+        └── Start A–Z runbooks
 ```
 
-The Web app and CLI operate the same released Scaniom contracts. The repository does not import implementation files from the private Scaniom source tree.
+The Web app and CLI operate the same released Scaniom contracts. The public repository does not import private Scaniom implementation files.
 
-## Locked UI direction
+## Open Immune vs future Scaniom Console
 
-The later Open Immune workbench uses four major surfaces:
+**Open Immune now:** choose a Lab/system, understand its architecture, then build the expected fabric from zero through real Scaniom commands and deployment/integration work.
 
-1. left guided Fabric Tree / demo progression,
-2. center live Fabric Matrix/topology,
-3. right inspector/actions,
-4. bottom live behavior/Gate/trajectory/CLI/proof intelligence surface.
+**Future Scaniom Console Fabric Builder:** freeform production fabric authoring where customers create arbitrary environments, Nodes, pools, attachments, providers and policies.
 
-A later production Scaniom Console Fabric Builder can reuse the interaction model, but Open Immune remains the public guided engineering experience.
+The interaction language may converge, but Open Immune remains Lab-driven while the production Console builder becomes freeform.
+
+## Truth boundary
+
+OIS Auth currently verifies profile, operator identity, organization, environment and workload. Runtime/fabric execution steps unlock in Lab order but remain unverified until real Scaniom evidence proves them.
