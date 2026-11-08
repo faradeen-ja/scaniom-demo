@@ -19,5 +19,20 @@ fi
 scaniom attach test l1 --workload "$WORKLOAD" --model "$MODEL" -- "Say hello in one sentence"
 scaniom attach status --workload "$WORKLOAD"
 scaniom live --workload "$WORKLOAD" --limit 20
-scaniom proof --window 24h --limit 10
-pass "D02 L1 FULL CYCLE PASS"
+scaniom trajectory list --limit 100
+PROOF_JSON="$(scaniom proof --env "$ENV_NAME" --window 24h --limit 100 --json)"
+node - "$PROOF_JSON" "$WORKLOAD" <<'NODE'
+const [raw, workload] = process.argv.slice(2);
+const body = JSON.parse(raw);
+const evidence = Array.isArray(body.evidence) ? body.evidence : [];
+const accepted = evidence.filter((item) =>
+  String(item.workload_name || "") === workload
+  && String(item.verification || "") !== "invalid"
+);
+if (!accepted.length) {
+  throw new Error(`No signed proof evidence found for workload ${workload} in the selected 24h environment scope.`);
+}
+console.log(`✓ signed proof evidence PASS · ${accepted.length} object(s) · ${workload}`);
+NODE
+scaniom proof correlated list --limit 50
+pass "D02 L1 FULL CYCLE PASS · traffic + Gate/trajectory + signed proof"

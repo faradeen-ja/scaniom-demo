@@ -82,7 +82,9 @@ test("placement guides portal to the viewport instead of being clipped by the wo
 test("provider selection exposes all released provider paths even when a lab has one default", () => {
   const labs = read("lib/open-ii/labs.ts");
   for (const token of ["OpenAI", "Anthropic", "Gemini", "Bedrock", "Custom / private"]) assert.match(labs, new RegExp(token));
-  assert.match(labs, /const include = \(_needle: string\) => true/);
+  assert.match(labs, /function providerGuideOptions\(\): LabGuideOption\[\]/);
+  for (const id of ["openai", "anthropic", "gemini", "bedrock", "custom"]) assert.match(labs, new RegExp(`id: "${id}"`));
+  assert.doesNotMatch(labs, /const include = \(_needle: string\) => true/);
 });
 
 

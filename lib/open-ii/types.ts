@@ -186,6 +186,63 @@ export type OperatorAttachmentState = {
   [key: string]: unknown;
 };
 
+
+export type OperatorProofEvidence = {
+  id: string;
+  kind: "receipt" | "batch";
+  occurred_at: string;
+  environment_id: string;
+  environment_name: string;
+  workload_name: string;
+  node_name: string;
+  provider: string;
+  attachment_source: string;
+  attachment_label: string;
+  policy_version: number;
+  policy_digest: string | null;
+  machine_action: string;
+  count: number;
+  behavior_event_id: string | null;
+  merkle_root: string | null;
+  key_fingerprint: string | null;
+  verification: "valid" | "invalid" | "accepted-batch";
+};
+
+export type OperatorProofState = {
+  summary?: {
+    evidenceObjects?: number;
+    receiptCount?: number;
+    batchCount?: number;
+    latestEvidenceAt?: string | null;
+    recentReceiptSample?: { checked?: number; valid?: number; invalid?: number };
+    [key: string]: unknown;
+  };
+  evidence?: OperatorProofEvidence[];
+};
+
+export type OperatorCorrelatedProof = {
+  proofId?: string;
+  correlationId?: string;
+  workloadId?: string;
+  workloadName?: string;
+  environmentId?: string;
+  verification?: string;
+  eventCount?: number;
+  [key: string]: unknown;
+};
+
+export type OpenIiLocalExecution = {
+  d01PublicInstall?: {
+    version: 1;
+    labId: "d01-public-install";
+    status: "pass";
+    release: "R18";
+    scaniomVersion: "0.4.1";
+    verifiedAt: string;
+    checks: { publicRelease: true; standaloneCli: true; npmSdk: true; pypiSdk: true };
+  } | null;
+};
+
 export type OpenIiContextResponse = {
   profile: {
     name: string;
@@ -203,5 +260,8 @@ export type OpenIiContextResponse = {
   connections?: OperatorConnection[];
   policies?: OperatorPolicy[];
   attachments?: OperatorAttachmentState | null;
+  proof?: OperatorProofState | null;
+  correlatedProofs?: OperatorCorrelatedProof[];
+  execution?: OpenIiLocalExecution;
   cli: string[];
 };

@@ -75,7 +75,7 @@ function providerIcon(provider: string): string {
   return "server";
 }
 
-function ProviderReality({ context, lab, onOpen }: { context: OpenIiContextResponse | null; lab: LabManifest; onOpen: () => void }) {
+function ProviderReality({ context, onOpen }: { context: OpenIiContextResponse | null; onOpen: () => void }) {
   const workloadId = context?.workspace?.workloadId;
   const routes = (context?.connections || []).filter((item) => item.workload_id === workloadId && item.status !== "paused");
   const readyRoutes = Number(context?.attachments?.counts?.readyRoutes || 0);
@@ -600,7 +600,7 @@ export function OpenImmuneWorkbench() {
             </div> : null}
             <WorkSurfaceLinks step={selectedStep} context={context} command={selectedCommands.find(isScaniomCliCommand)}/>
             {selectedStep.notes?.length ? <div className={styles.stepNotes}><small>BOUNDARY NOTES</small>{selectedStep.notes.map((note) => <p key={note}>{note}</p>)}</div> : null}
-            {selectedStep.id === "provider" ? <ProviderReality context={context} lab={lab} onOpen={() => setGuideModalOpen(true)}/> : null}
+            {selectedStep.id === "provider" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
             {context && ["provider", "attach-l1", "attach-l2", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 
             {guideOptions.length ? <div className={styles.guideSurface}>
