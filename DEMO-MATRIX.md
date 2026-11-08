@@ -1,16 +1,17 @@
-# Demo Matrix
+# Open Immune Lab Matrix
 
-Every demo follows the same public-customer discipline:
+Every Lab follows the same public-customer discipline:
 
-1. Install the accepted Scaniom release from public distribution.
-2. Authenticate to the selected real Scaniom Control profile; the public default is `https://control.scaniom.com`.
+1. Verify and install the accepted public Scaniom release.
+2. Complete OIS Auth against the selected real Scaniom Control (`https://control.scaniom.com` is the public default).
 3. Create/select a real environment and workload.
-4. Establish workload identity.
-5. Run the accepted runtime boundary.
-6. Exercise real traffic or a clearly inert local consequence.
-7. Inspect Gate decision, trajectory, and proof.
-8. Verify PASS.
-9. Keep provider credentials at the Node/runtime boundary.
-10. Never depend on a private Scaniom checkout.
+4. Issue workload identity / Scaniom Address.
+5. Enroll the real Node/Node pool and publish policy.
+6. Configure the real provider/runtime target. Provider secret values remain Node-local or in the enterprise secret store.
+7. Build only the attachment boundaries required by the selected Lab.
+8. Change the actual application/runtime/deployment at the correct surface: IDE, VM, Docker, Kubernetes, MCP path, model runtime or provider-native adapter.
+9. Exercise real traffic or an explicitly inert local consequence.
+10. Inspect Gate, behavior, trajectory and signed/correlated proof.
+11. Never depend on a private Scaniom checkout.
 
-Open Immune Intelligence adds a Web workbench over the same truth. A visual step may guide an operator, but it is complete only when the corresponding real Scaniom state/evidence exists.
+The Workbench renders this runbook from Lab manifests. Green means current Scaniom authority/evidence actually verifies a state; UI clicks never synthesize completion.

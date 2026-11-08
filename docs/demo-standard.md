@@ -1,5 +1,7 @@
-# Demo standard
+# Lab standard
 
-Every demo must state what it proves, what public artifact it uses, what real identity is required, what Scaniom scope is created, which attachment is exercised, what traffic is real, what evidence should appear, and what command proves PASS.
+Every Open Immune Lab must state what it proves, which accepted public Scaniom artifacts it needs, where the operator must work, what real identity and protected scope are required, which attachment boundary is exercised, which provider/runtime credentials stay at the Node or enterprise secret boundary, what traffic is real, what evidence should appear, and which command proves completion.
 
-No demo may import from `../scaniom`, execute `scripts/scaniom-cli.mjs` from private source, or require an unpublished package.
+A Lab must guide the operator end-to-end instead of jumping directly to an attachment command. Where relevant, the runbook covers public release verification, Scaniom CLI installation, OIS Auth, environment/workload scope, Scaniom Address, Node, policy, provider BYOK, runtime identity, application/runtime/deployment integration, real traffic, Gate/trajectory and signed proof.
+
+No Lab may import from `../scaniom`, execute `scripts/scaniom-cli.mjs` from private source, require an unpublished package, copy provider keys into Open Immune, or mark a step complete without real Scaniom state/evidence.

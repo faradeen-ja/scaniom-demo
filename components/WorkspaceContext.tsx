@@ -54,17 +54,11 @@ export function WorkspaceContext() {
       setWorkload(next.workspace?.workloadId || "");
       setError("");
     }).catch((err: unknown) => {
-      if (!cancelled) {
-        setContext(null);
-        setError(err instanceof Error ? err.message : String(err));
-      }
+      if (!cancelled) { setContext(null); setError(err instanceof Error ? err.message : String(err)); }
     });
     const refresh = () => { void load(); };
     window.addEventListener("open-ii-auth-changed", refresh);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("open-ii-auth-changed", refresh);
-    };
+    return () => { cancelled = true; window.removeEventListener("open-ii-auth-changed", refresh); };
   }, [load]);
 
   const visibleWorkloads = useMemo(() => {
@@ -81,39 +75,39 @@ export function WorkspaceContext() {
     finally { setBusy(false); }
   }
 
-  if (!context) return <section className="panel"><div className="panel-heading"><div><small>WORKSPACE CONTEXT</small><h2>Connect Scaniom first</h2></div></div><p>{error || "Reading environments and workloads…"}</p><Link className="button" href="/">Go to connection</Link></section>;
+  if (!context) return <section className="panel scope-empty"><div><span className="state-dot waiting"/><small>REAL SCANIOM SCOPE</small><h2>Authorize Scaniom first.</h2><p>{error || "Environment and workload become available after the operator session is approved."}</p></div><Link className="button" href="#connection">Go to authorization</Link></section>;
 
   const selectedEnvironment = context.environments.find((item) => item.id === context.workspace?.environmentId);
   const selectedWorkload = context.workloads.find((item) => item.id === context.workspace?.workloadId);
+  const ready = Boolean(selectedEnvironment && selectedWorkload);
 
-  return <div className="workspace-grid">
-    <section className="panel workspace-scope">
-      <div className="panel-heading"><div><small>REAL SCANIOM AUTHORITY</small><h2>Current operator context</h2></div><span className="accepted-badge">LIVE</span></div>
-      <dl className="facts">
-        <div><dt>Identity</dt><dd>{context.whoami.user.name}<small>{context.whoami.user.email}</small></dd></div>
-        <div><dt>Organization</dt><dd>{context.whoami.organization.name}<small>{context.whoami.organization.slug} · {context.whoami.role.replaceAll("_", " ")}</small></dd></div>
-        <div><dt>Credential</dt><dd>{context.whoami.credential.kind}<small>{context.whoami.credential.name}</small></dd></div>
-        <div><dt>Control</dt><dd>{context.profile.label}<small>{context.profile.controlUrl}</small></dd></div>
-        <div><dt>Deployment</dt><dd>{context.deployment?.label || context.deployment?.id || "Scaniom Control"}<small>{context.deployment?.type || context.deployment?.mode || "active"}</small></dd></div>
-      </dl>
-      <p className="microcopy">The organization comes from the Scaniom authorization that minted this operator session. To move to another Scaniom organization, change organization in that Control, sign out here, and reconnect.</p>
-    </section>
-
-    <section className="panel workspace-selector">
-      <div className="panel-heading"><div><small>OPEN IMMUNE WORKSPACE</small><h2>Environment + workload</h2></div><span>{context.environments.length} env · {context.workloads.length} workload</span></div>
+  return <div className="scope-layout">
+    <section className="panel scope-picker">
+      <div className="panel-heading"><div><small>REAL SCANIOM SCOPE</small><h2>Environment + workload</h2></div><span className={ready ? "accepted-badge" : "scope-state"}>{ready ? "✓ READY" : "SELECT"}</span></div>
+      <p className="muted">Choose existing Scaniom resources. Open Immune stores only this selection and validates that the workload belongs to the selected environment.</p>
       <form onSubmit={save}>
-        <label>Environment<select value={environment} onChange={(e: ChangeEvent<HTMLSelectElement>) => { setEnvironment(e.target.value); setWorkload(""); }}><option value="">No environment selected</option>{context.environments.map((item) => <option key={item.id} value={item.id}>{title(item)}{item.status ? ` · ${item.status}` : ""}</option>)}</select></label>
-        <label>Workload<select value={workload} onChange={(e: ChangeEvent<HTMLSelectElement>) => setWorkload(e.target.value)}><option value="">No workload selected</option>{visibleWorkloads.map((item) => <option key={item.id} value={item.id}>{title(item)}{item.kind ? ` · ${item.kind}` : ""}</option>)}</select></label>
-        <button className="button" type="submit" disabled={busy}>{busy ? "Saving…" : "Use workspace"}</button>
+        <label><span>01 · ENVIRONMENT</span><select value={environment} onChange={(e: ChangeEvent<HTMLSelectElement>) => { setEnvironment(e.target.value); setWorkload(""); }}><option value="">Select real environment…</option>{context.environments.map((item) => <option key={item.id} value={item.id}>{title(item)}{item.status ? ` · ${item.status}` : ""}</option>)}</select></label>
+        <label><span>02 · WORKLOAD</span><select value={workload} onChange={(e: ChangeEvent<HTMLSelectElement>) => setWorkload(e.target.value)}><option value="">Select real workload…</option>{visibleWorkloads.map((item) => <option key={item.id} value={item.id}>{title(item)}{item.kind ? ` · ${item.kind}` : ""}</option>)}</select></label>
+        <button className="button" type="submit" disabled={busy}>{busy ? "Saving…" : ready ? "Update scope" : "Use this scope"}</button>
       </form>
-      <div className="workspace-current"><small>CURRENT</small><b>{selectedEnvironment ? title(selectedEnvironment) : "No environment"}</b><span>{selectedWorkload ? title(selectedWorkload) : "No workload"}</span></div>
       {error ? <p className="error-box">{error}</p> : null}
     </section>
 
-    <section className="panel cli-block workspace-cli">
-      <div className="panel-heading"><div><small>WEB + CLI PARITY</small><h2>Same Control profile</h2></div></div>
-      <pre>{context.cli.join("\n")}</pre>
-      {selectedWorkload ? <pre>{`scaniom workload use ${selectedWorkload.slug || selectedWorkload.name || selectedWorkload.id}\nscaniom attach status --workload ${selectedWorkload.slug || selectedWorkload.name || selectedWorkload.id}`}</pre> : null}
+    <section className="panel scope-current">
+      <div className="panel-heading"><div><small>CURRENT AUTHORITY</small><h2>{ready ? "Ready for a lab." : "Scope incomplete."}</h2></div><span>{context.profile.name}</span></div>
+      <div className="scope-current-stack">
+        <div><small>CONTROL</small><b>{context.profile.label}</b><span>{context.profile.controlUrl}</span></div>
+        <div><small>ORGANIZATION</small><b>{context.whoami.organization.name}</b><span>{context.whoami.organization.slug} · {context.whoami.role.replaceAll("_", " ")}</span></div>
+        <div className={selectedEnvironment ? "online" : "waiting"}><small>ENVIRONMENT</small><b>{selectedEnvironment ? title(selectedEnvironment) : "Not selected"}</b><span>{selectedEnvironment?.status || "Required before workload"}</span></div>
+        <div className={selectedWorkload ? "online" : "waiting"}><small>WORKLOAD</small><b>{selectedWorkload ? title(selectedWorkload) : "Not selected"}</b><span>{selectedWorkload?.kind || "Required for runtime identity"}</span></div>
+      </div>
+      <div className="button-row"><Link className={`button ${ready ? "" : "secondary"}`} href="/workbench">{ready ? "Choose a lab" : "Preview lab library"}</Link><Link className="button ghost" href="/profiles">Profiles</Link></div>
+    </section>
+
+    <section className="panel cli-block scope-cli">
+      <div className="panel-heading"><div><small>WEB + CLI PARITY</small><h2>Same authority, same scope.</h2></div><span>{context.whoami.credential.kind}</span></div>
+      <p className="microcopy">These commands target the same Control profile. Lab-specific commands appear in the workbench after you select a Lab.</p>
+      <pre>{context.cli.join("\n")}{selectedWorkload ? `\nscaniom workload use ${selectedWorkload.slug || selectedWorkload.name || selectedWorkload.id}\nscaniom attach status --workload ${selectedWorkload.slug || selectedWorkload.name || selectedWorkload.id}` : ""}</pre>
     </section>
   </div>;
 }

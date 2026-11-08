@@ -121,3 +121,87 @@ export type OperatorWorkload = {
   status?: string;
   [key: string]: unknown;
 };
+
+
+export type OperatorNode = {
+  id: string;
+  name?: string;
+  slug?: string;
+  environment_id?: string;
+  environmentId?: string;
+  environment_name?: string;
+  operational_state?: string;
+  status?: string;
+  node_version?: string;
+  runtime?: string;
+  platform?: string;
+  arch?: string;
+  connections?: number;
+  [key: string]: unknown;
+};
+
+export type OperatorConnection = {
+  id: string;
+  name?: string;
+  provider?: string;
+  protocol?: string;
+  endpoint?: string;
+  model_hint?: string;
+  secret_ref?: string;
+  status?: string;
+  node_id?: string;
+  node_name?: string;
+  workload_id?: string;
+  workload_name?: string;
+  environment_id?: string;
+  settings?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+export type OperatorPolicy = {
+  environment_id?: string;
+  environment_name?: string;
+  mode?: string;
+  profile?: string;
+  version?: number;
+  policy_digest?: string;
+  [key: string]: unknown;
+};
+
+export type OperatorAttachmentLevel = {
+  id?: string;
+  level?: string;
+  name?: string;
+  configured?: boolean;
+  ready?: boolean;
+  evidence?: { total?: number; [key: string]: unknown };
+  [key: string]: unknown;
+};
+
+export type OperatorAttachmentState = {
+  workload?: { id?: string; name?: string; slug?: string; environment?: string; address?: string | null } | null;
+  levels?: OperatorAttachmentLevel[];
+  counts?: Record<string, number>;
+  sources?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+export type OpenIiContextResponse = {
+  profile: {
+    name: string;
+    label: string;
+    type: ScaniomProfileType;
+    controlUrl: string;
+  };
+  identity: ScaniomIdentity;
+  whoami: OperatorWhoAmI;
+  deployment: ControlDeploymentResponse["deployment"];
+  workspace: WorkspaceCookieState | null;
+  environments: OperatorEnvironment[];
+  workloads: OperatorWorkload[];
+  nodes?: OperatorNode[];
+  connections?: OperatorConnection[];
+  policies?: OperatorPolicy[];
+  attachments?: OperatorAttachmentState | null;
+  cli: string[];
+};
