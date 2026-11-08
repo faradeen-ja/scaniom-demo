@@ -157,10 +157,9 @@ function providerCommands(providers: string[], multiProvider: boolean): string[]
   return commands;
 }
 
-function providerGuideOptions(_providers: string[], _multiProvider: boolean): LabGuideOption[] {
-  const include = (_needle: string) => true;
+function providerGuideOptions(): LabGuideOption[] {
   const options: LabGuideOption[] = [];
-  if (include("openai")) options.push({
+  options.push({
     id: "openai", label: "OpenAI", icon: "openai", kicker: "NODE-LOCAL BYOK",
     description: "Bind an OpenAI Responses route to the selected workload. The OpenAI key is entered by the Scaniom CLI on the Node host; it is not typed into Open Immune or Scaniom Control.",
     surface: "Terminal on the Scaniom Node host / enterprise secret materialization",
@@ -168,21 +167,21 @@ function providerGuideOptions(_providers: string[], _multiProvider: boolean): La
     commands: ["scaniom provider add openai --node {{node}} --workload {{workload}} --model {{model}}", "scaniom secret configure OPENAI_API_KEY --node {{node}}", "scaniom node restart", "scaniom providers", "scaniom provider list"],
     notes: ["The CLI prompts for the secret on the Node host. Control receives only the env reference and route metadata."]
   });
-  if (include("anthropic")) options.push({
+  options.push({
     id: "anthropic", label: "Anthropic", icon: "anthropic", kicker: "NODE-LOCAL BYOK",
     description: "Bind an Anthropic Messages route while keeping ANTHROPIC_API_KEY on the Node or enterprise secret store.",
     surface: "Terminal on the Scaniom Node host / enterprise secret materialization",
     flow: ["Application", "Scaniom Node", "Gate", "Anthropic"],
     commands: ["scaniom provider add anthropic --node {{node}} --workload {{workload}} --model {{model}}", "scaniom secret configure ANTHROPIC_API_KEY --node {{node}}", "scaniom node restart", "scaniom providers"],
   });
-  if (include("gemini")) options.push({
+  options.push({
     id: "gemini", label: "Gemini", icon: "gemini", kicker: "NODE-LOCAL BYOK",
     description: "Bind a Gemini generateContent route. GEMINI_API_KEY remains Node-local and is applied by the Scaniom provider adapter.",
     surface: "Terminal on the Scaniom Node host / enterprise secret materialization",
     flow: ["Application", "Scaniom Node", "Gate", "Gemini"],
     commands: ["scaniom provider add gemini --node {{node}} --workload {{workload}} --model {{model}}", "scaniom secret configure GEMINI_API_KEY --node {{node}}", "scaniom node restart", "scaniom providers"],
   });
-  if (include("bedrock")) options.push({
+  options.push({
     id: "bedrock", label: "Bedrock", icon: "aws", kicker: "AWS SIGV4",
     description: "Bind Bedrock Converse using the Node-local AWS credential chain and an explicit region.",
     surface: "Scaniom Node host / AWS workload identity / enterprise secret integration",
@@ -190,7 +189,7 @@ function providerGuideOptions(_providers: string[], _multiProvider: boolean): La
     commands: ["scaniom provider add bedrock --node {{node}} --workload {{workload}} --model {{model}} --region {{region}}", "scaniom secret configure AWS_ACCESS_KEY_ID --node {{node}}", "scaniom secret configure AWS_SECRET_ACCESS_KEY --node {{node}}", "scaniom node restart", "scaniom providers"],
     notes: ["On AWS, prefer the platform credential chain/role instead of copied long-lived keys when available."]
   });
-  if (include("custom")) options.push({
+  options.push({
     id: "custom", label: "Custom / private", icon: "server", kicker: "EXPLICIT HTTP ROUTE",
     description: "Wire another AI provider or private HTTP JSON model endpoint with an explicit endpoint and secret reference. For vLLM/NIM/Triton inference runtimes, prefer L3 instead.",
     surface: "Node host + private provider/model endpoint",
@@ -305,7 +304,7 @@ function runtimeSteps(attachments: string[], providers: string[], options: { mul
 
   const needsProvider = attachments.some((value) => ["L1", "L4"].includes(value)) || options.multiProvider || options.immunex;
   if (needsProvider) {
-    steps.push(liveStep("provider", { id: "provider", label: options.multiProvider ? "Provider routes + BYOK" : "Provider route + BYOK", eyebrow: "NODE-LOCAL CREDENTIALS", group: "runtime", depth: 0, dependsOn: ["policy"], detail: options.multiProvider ? "Configure multiple real provider routes and Node-local credentials while preserving one Scaniom workload identity, policy, Gate and trajectory." : "Configure the provider route and provider credential on the Scaniom Node or enterprise secret store.", why: "Open Immune never asks for raw AI provider keys. Control stores route metadata and secret references; the Node or enterprise secret system owns the value.", surface: "Node host / Kubernetes Secret / enterprise secret store", artifacts: ["OpenAI / Anthropic / Gemini keys", "AWS credential chain for Bedrock", "CUSTOM_MODEL_TOKEN for custom routes"], commands: providerCommands(providers, Boolean(options.multiProvider)), notes: ["Enter provider keys through `scaniom secret configure ...` on the Node host or materialize them from the enterprise secret system.", "Do not paste raw provider keys into Open Immune or Scaniom Control.", "Multi-provider routes share one workload identity and can contribute to one correlated trajectory."], guideOptions: providerGuideOptions(providers, Boolean(options.multiProvider)) }));
+    steps.push(liveStep("provider", { id: "provider", label: options.multiProvider ? "Provider routes + BYOK" : "Provider route + BYOK", eyebrow: "NODE-LOCAL CREDENTIALS", group: "runtime", depth: 0, dependsOn: ["policy"], detail: options.multiProvider ? "Configure multiple real provider routes and Node-local credentials while preserving one Scaniom workload identity, policy, Gate and trajectory." : "Configure the provider route and provider credential on the Scaniom Node or enterprise secret store.", why: "Open Immune never asks for raw AI provider keys. Control stores route metadata and secret references; the Node or enterprise secret system owns the value.", surface: "Node host / Kubernetes Secret / enterprise secret store", artifacts: ["OpenAI / Anthropic / Gemini keys", "AWS credential chain for Bedrock", "CUSTOM_MODEL_TOKEN for custom routes"], commands: providerCommands(providers, Boolean(options.multiProvider)), notes: ["Enter provider keys through `scaniom secret configure ...` on the Node host or materialize them from the enterprise secret system.", "Do not paste raw provider keys into Open Immune or Scaniom Control.", "Multi-provider routes share one workload identity and can contribute to one correlated trajectory."], guideOptions: providerGuideOptions() }));
   } else {
     steps.push(externalStep({ id: "provider", label: "Runtime target", eyebrow: "UPSTREAM TARGET", group: "runtime", depth: 0, dependsOn: ["workload"], detail: "Provide the real model runtime, MCP server or provider-native target required by this lab.", why: "The lab exercises a real execution target; Open Immune never fabricates upstream success.", surface: "Target runtime environment", commands: ["scaniom attach architecture"] }));
   }
@@ -429,8 +428,33 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
     }
     case "attachment": return attachmentVerified(step, context);
     case "behavior": return Boolean(context.attachments?.levels?.some((item) => Number(item.evidence?.total || 0) > 0));
-    case "proof": return false;
-    case "external": return false;
+    case "proof": {
+      if (!workload) return false;
+      const workloadName = String(workload.name || workload.slug || workload.id || "").trim().toLowerCase();
+      const directProof = Boolean(context.proof?.evidence?.some((item) =>
+        item.environment_id === environmentId
+        && String(item.workload_name || "").trim().toLowerCase() === workloadName
+        && item.verification !== "invalid"
+      ));
+      const correlatedProof = Boolean(context.correlatedProofs?.some((item) =>
+        (item.workloadId === workloadId || String(item.workloadName || "").trim().toLowerCase() === workloadName)
+        && String(item.verification || "").toLowerCase() === "valid"
+      ));
+      return directProof || correlatedProof;
+    }
+    case "external":
+      if (lab.id === "d01-public-install" && step.id === "sdk-distributions") {
+        const receipt = context.execution?.d01PublicInstall;
+        return Boolean(receipt
+          && receipt.status === "pass"
+          && receipt.release === "R18"
+          && receipt.scaniomVersion === "0.4.1"
+          && receipt.checks.publicRelease
+          && receipt.checks.standaloneCli
+          && receipt.checks.npmSdk
+          && receipt.checks.pypiSdk);
+      }
+      return false;
   }
 }
 

@@ -1,6 +1,7 @@
 import { validateOpenIiSession } from "@/lib/open-ii/auth";
 import { controlApi } from "@/lib/open-ii/control-client";
 import { noStore } from "@/lib/open-ii/http";
+import { readLocalExecutionState } from "@/lib/open-ii/local-execution";
 import { profileCliCommands } from "@/lib/open-ii/profile-contract";
 import { requestHost } from "@/lib/open-ii/profile-store";
 import { loadWorkspaceResources, selectedWorkspace } from "@/lib/open-ii/workspace";
@@ -10,6 +11,8 @@ import type {
   OperatorConnection,
   OperatorNode,
   OperatorPolicy,
+  OperatorProofState,
+  OperatorCorrelatedProof,
 } from "@/lib/open-ii/types";
 
 export const runtime = "nodejs";
@@ -23,6 +26,15 @@ async function optionalItems<T>(profile: Parameters<typeof controlApi>[0], token
     return Array.isArray(body.items) ? body.items : [];
   } catch {
     return [];
+  }
+}
+
+
+async function optionalJson<T>(profile: Parameters<typeof controlApi>[0], token: string, route: string): Promise<T | null> {
+  try {
+    return await controlApi<T>(profile, route, token);
+  } catch {
+    return null;
   }
 }
 
@@ -45,11 +57,17 @@ export async function GET(request: Request) {
       controlApi<ControlDeploymentResponse>(current.profile, "/api/v1/control/deployment", current.session.token),
     ]);
 
-    const [nodes, connections, policies, attachments] = await Promise.all([
+    const environmentParam = workspace?.environmentId ? `&env=${encodeURIComponent(workspace.environmentId)}` : "";
+    const correlatedParam = workspace?.environmentId ? `?environment=${encodeURIComponent(workspace.environmentId)}&limit=50` : "?limit=50";
+
+    const [nodes, connections, policies, attachments, proof, correlatedEnvelope, execution] = await Promise.all([
       optionalItems<OperatorNode>(current.profile, current.session.token, "/api/v1/operator/nodes"),
       optionalItems<OperatorConnection>(current.profile, current.session.token, "/api/v1/operator/connections"),
       optionalItems<OperatorPolicy>(current.profile, current.session.token, "/api/v1/operator/policy"),
       optionalAttachmentState(current.profile, current.session.token, workspace?.workloadId),
+      optionalJson<OperatorProofState>(current.profile, current.session.token, `/api/v1/operator/proof?window=24h&limit=100${environmentParam}`),
+      optionalJson<{ items?: OperatorCorrelatedProof[] }>(current.profile, current.session.token, `/api/v1/operator/correlated-proofs${correlatedParam}`),
+      readLocalExecutionState(),
     ]);
 
     return noStore({
@@ -69,6 +87,9 @@ export async function GET(request: Request) {
       connections,
       policies,
       attachments,
+      proof,
+      correlatedProofs: Array.isArray(correlatedEnvelope?.items) ? correlatedEnvelope.items : [],
+      execution,
       cli: profileCliCommands(current.profile),
     });
   } catch (error) {
