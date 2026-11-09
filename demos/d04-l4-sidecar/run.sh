@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# INTERNAL ENGINEERING / CI ACCEPTANCE HARNESS. Normal Open Immune users use the Workbench + released scaniom commands.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; source "$ROOT/scripts/lib/common.sh"; "$ROOT/scripts/ensure-scope.sh"

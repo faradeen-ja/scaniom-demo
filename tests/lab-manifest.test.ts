@@ -161,3 +161,15 @@ test("public Open Immune docs only advertise released Scaniom CLI command famili
     }
   }
 });
+
+
+test("D04 is a Workbench-first L4 flow with shared B1 identity and no user-facing shell prerequisite", () => {
+  const lab = labById("d04-l4-sidecar")!;
+  const identity = lab.steps.find((step) => step.id === "runtime-identity")!;
+  const l4 = lab.steps.find((step) => step.id === "attach-l4")!;
+  assert.equal(identity.completion, "runtimeIdentity");
+  assert.ok(identity.commands?.some((command) => command.includes("--attachments l1,l2,l4")));
+  assert.ok(l4.commands?.some((command) => command.startsWith("scaniom attach l4")));
+  assert.ok(l4.guideOptions?.every((option) => option.commands.every((command) => !command.includes("demos/") && !command.endsWith("run.sh"))));
+  assert.match(fs.readFileSync("demos/d04-l4-sidecar/README.md", "utf8"), /Normal users do not run/);
+});

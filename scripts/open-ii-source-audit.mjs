@@ -41,7 +41,7 @@ need("docs/start-here.md",["# Start A–Z","Provider keys and BYOK","Attachment 
 need(".env.example",["Provider credentials DO NOT belong in Open Immune environment files","scaniom secret configure OPENAI_API_KEY"]);
 
 need("components/workbench/OpenImmuneWorkbench.tsx",["LabTreeGroup kind=\"lab\" label=\"Labs\"","LIVE ARCHITECTURE · MANIFEST PREVIEW","FABRIC TREE","FABRIC MATRIX","INSPECTOR","LIVE INTELLIGENCE","WORK HERE","REQUIRES","REAL SCANIOM COMMANDS","PLACEMENT / INTEGRATION","GuideModal","WorkSurfaceLinks","isReleasedScaniomCliCommand","LAB MANIFEST","ProviderReality","ResolvedRuntimeValues","RuntimeIdentityReality","REAL RUNTIME IDENTITY","Never paste provider keys here","Scaniom Control ↗","Copy CLI","createPortal","matrixResetButton","providerInspectorBlock","providerValuePanel","providerCardsGrid","providerRoutesPanel","next_${selectedStep.status}","onPointerMove","<main className={styles.matrixPane}>"]);
-reject("components/workbench/OpenImmuneWorkbench.tsx",["Guided demos","GUIDED DEMO","DEMO-DRIVEN","import { ImmunityField }","WHY FABRIC?","FabricMatrixGuide","StepContextRail","DRAG NODES TO REFORM VIEW","verified by real Scaniom authority","panelToggle","PanelChevron","Hide Fabric Tree","Show Fabric Tree","Hide Inspector","Show Inspector","setTreeHidden","setInspectorHidden"]);
+reject("components/workbench/OpenImmuneWorkbench.tsx",["Guided demos","GUIDED DEMO","DEMO-DRIVEN","import { ImmunityField }","WHY FABRIC?","FabricMatrixGuide","StepContextRail","DRAG NODES TO REFORM VIEW","verified by real Scaniom authority","panelToggle","PanelChevron","setTreeHidden","setInspectorHidden","globalPaneToggles","mobilePaneBackdrop","compactLayout","paneToggleButton","paneToggleActive"]);
 need("lib/open-ii/labs.ts",['export type LabKind = "lab" | "system"',"LabGuideOption","guideOptions","d00-account-auth","d02-l1-full-cycle","d12-immunex","flagship-full-fabric","system-saas","system-robots","system-lanes","system-factory","system-ifoc","does not require the L2 SDK","npm install @scaniom/sdk@0.4.1","python3 -m pip install scaniom==0.4.1","OPENAI_API_KEY","CUSTOM_MODEL_TOKEN","providerGuideOptions","labResolvedValues","selectedLabNode","selectedLabConnection","scaniom secret configure ${env}","scaniom runtime identity bootstrap","--attachments l1,l2,l4","runtimeIdentity","/v1/responses","surface:"]);
 reject("lib/open-ii/labs.ts",["./scripts/verify-public-release.sh","./scripts/install-public-cli.sh","./demos/d09-fleet-failover/run.sh","./demos/d10-offline-continuity/run.sh","./demos/d12-immunex/run.sh","id: \"public-release\"","Released Scaniom","PUBLIC R18 · 0.4.1"]);
 reject("lib/open-ii/labs.ts",['"guided"']);
@@ -69,10 +69,27 @@ need("app/api/auth/scaniom/cli-parity/start/route.ts",["CLI parity handoff is lo
 need("app/api/auth/scaniom/cli-parity/status/route.ts",["readCliParityChallenge","CLI parity challenge is missing or expired"]);
 need("app/api/auth/scaniom/cli-parity/approve/route.ts",["validateOpenIiSession","sameOriginRequest","approveCliParityChallenge","Open Immune Web is not connected to Scaniom Control"]);
 need("components/OisAuthConsole.tsx",["cliParityChallenge","/api/auth/scaniom/cli-parity/approve","CLI parity challenge approved. Return to the terminal."]);
-need("components/workbench/OpenImmuneWorkbench.tsx",["webAuthorityMissing","Connect Scaniom to start","disabled={webAuthorityMissing}"]);
+need("components/workbench/OpenImmuneWorkbench.tsx",["onClick={() => onStart(preview.id)}","AUTHORITY STATUS","runtimeWithoutContext"]);
+reject("components/workbench/OpenImmuneWorkbench.tsx",["webAuthorityMissing","Connect Scaniom to start","disabled={webAuthorityMissing}"]);
 need("scripts/ensure-scope.sh",["require_open_immune_authority"]);
 reject("docs/authentication.md",["./bin/scaniom"]);
 for(const file of ["demos/d02-l1-full-cycle/run.sh","demos/d03-l2-agent-sdk/run.sh","demos/d04-l4-sidecar/run.sh","demos/d06-l5-environment-gateway/run.sh","demos/d10-offline-continuity/run.sh","demos/flagship-full-fabric/run.sh"])reject(file,["$BIN","HOME=$DEMO_HOME"]);
+
+need("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH RESPONSIVE SYSTEM · SOURCE REBUILD V6","grid-template-areas:\"tree matrix inspector\" \"intel intel intel\"","max-width:1500px","container-name:openii-workbench","@container openii-workbench (max-width:1500px)","matrixResetButton","providerInspectorBlock","providerValuePanel","providerCardsGrid","UX9 · clean provider Inspector block"]);
+reject("components/workbench/OpenImmuneWorkbench.tsx",["treeVisible","inspectorVisible","treePreference","inspectorPreference","toggleTreePane","toggleInspectorPane","paneToggle","restorePane","restoreTree","restoreInspector","Hide Fabric Tree","Show Fabric Tree","Hide Inspector","Show Inspector","useSyncExternalStore","compactWorkbench"]);
+need("components/OisAuthConsole.tsx",["NETWORK OFFLINE","OFFLINE · SCANIOM CONTROL NOT CONTACTED"]);
+need("components/ScaniomConnection.tsx",["NETWORK OFFLINE","navigator.onLine"]);
+need("lib/open-ii/labs.ts",["d04-l4-sidecar","requiredManagedAttachment","managedRuntimeIdentityVerified","--attachments l1,l2,l4"]);
+reject("README.md",["Executable public run scripts remain under `demos/`"]);
+
+need("app/layout.tsx",["Metadata, Viewport",'width: "device-width"',"initialScale: 1",'viewportFit: "cover"']);
+need("app/globals.css",["OPEN-II RESPONSIVE SYSTEM · SOURCE REBUILD V4","app-header nav","docs-provider-grid","profile-layout","ois-auth-v2-grid","scope-layout","attachment-fabric-guide","max-width:900px","max-width:680px"]);
+need("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH RESPONSIVE SYSTEM · SOURCE REBUILD V6","libraryLayout","libraryTree","libraryVisual","libraryPreview","workspace","matrixPane","inspectorPane","guideModalCard","max-width:1500px","container-name:openii-workbench","@container openii-workbench (max-width:1500px)","position:static!important","grid-area:auto!important","max-width:480px"]);
+need("components/ImmunityField.module.css",["OPEN-II IMMUNITY FIELD RESPONSIVE · SOURCE REBUILD V4","max-width:900px","max-width:650px","max-width:420px"]);
+reject("components/workbench/OpenImmuneWorkbench.tsx",["treeVisible","inspectorVisible","toggleTreePane","toggleInspectorPane","paneToggle","restorePane","globalPaneToggles","mobilePaneBackdrop","compactLayout"]);
+reject("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH RESPONSIVE REPO · FINAL V3","OPEN-II D04 · clean two-pane controls","panelRevealButton","treeHidden","inspectorHidden","paneToggle","restorePane"]);
+reject("app/globals.css",["OPEN-II RESPONSIVE REPO · FINAL V3","OPEN-II D04 EXEC4 · responsive shell repair"]);
+reject("components/ImmunityField.module.css",["OPEN-II IMMUNITY FIELD RESPONSIVE · FINAL V3"]);
 
 if(errors.length){console.error("OPEN IMMUNE INTELLIGENCE SOURCE AUDIT FAIL");for(const error of errors)console.error(`- ${error}`);process.exit(1);}
 
@@ -87,7 +104,7 @@ console.log("✓ CLI parity exposes installed scaniom commands, never repo shell
 console.log("✓ L1/L2/L3/L4/L5/MCP/L6 expose placement cards + real Scaniom commands");
 console.log("✓ Lab/system manifest drives Tree + free-form Matrix + Inspector + Intelligence");
 console.log("✓ Fabric Matrix stays visual-first, draggable, and free of duplicate guide/context chrome");
-console.log("✓ Fabric Tree + Inspector remain permanent side panes with no hide/show controls");
+console.log("✓ Fabric Tree + Inspector remain permanent first-class panes with no hide/show control layer");
 console.log("✓ placement/provider guide is portaled above the shell and centered in the viewport");
 console.log("✓ L3 multi-provider Inspector uses isolated shell-scale styling for authority, provider value, routes, commands, and completion state");
 console.log("✓ Start A-Z renders seven interactive attachment boundaries inside one Immune Fabric");

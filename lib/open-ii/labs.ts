@@ -4,7 +4,7 @@ export type LabKind = "lab" | "system";
 export type LabStepStatus = "verified" | "ready" | "locked";
 export type LabCompletion =
   | "profile" | "identity" | "organization" | "environment" | "workload"
-  | "address" | "node" | "policy" | "provider" | "attachment" | "behavior" | "proof" | "external";
+  | "address" | "node" | "policy" | "runtimeIdentity" | "provider" | "attachment" | "behavior" | "proof" | "external";
 export type LabStepGroup = "authority" | "fabric" | "runtime" | "evidence";
 
 export type LabGuideOption = {
@@ -89,7 +89,7 @@ function liveStep(completion: Exclude<LabCompletion, "profile" | "identity" | "o
   return { ...input, completion };
 }
 
-function topologyFor(options: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; includePolicy?: boolean; includeEvidence?: boolean }): LabManifest["topology"] {
+function topologyFor(options: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; runtimeIdentity?: boolean; includeTarget?: boolean; includePolicy?: boolean; includeEvidence?: boolean }): LabManifest["topology"] {
   const attachments = options.attachments || [];
   const nodes: LabTopologyNode[] = [
     { id: "control", label: "Scaniom Control", eyebrow: "AUTHORITY", x: 50, y: 8, stepId: "profile", tone: "control" },
@@ -107,13 +107,17 @@ function topologyFor(options: { attachments?: string[]; multiNode?: boolean; mul
     nodes.push({ id, label: nodeCount > 1 ? `Node ${i + 1}` : "Scaniom Node", eyebrow: "MACHINE AUTHORITY", x: nodeCount > 1 ? 36 + i * 14 : 50, y: 56, stepId: "node", tone: "node" });
     edges.push({ from: "workload", to: id });
   }
+  if (options.runtimeIdentity) {
+    nodes.push({ id: "runtime-identity", label: "Runtime Identity", eyebrow: "WORKLOAD AUTHORITY", x: 36, y: 73, stepId: "runtime-identity", tone: "workload" });
+    edges.push({ from: "node-1", to: "runtime-identity" });
+  }
   if (attachments.length) {
     const width = Math.min(72, Math.max(24, attachments.length * 10));
     attachments.forEach((attachment, index) => {
-      const x = attachments.length === 1 ? 50 : 50 - width / 2 + (width / Math.max(1, attachments.length - 1)) * index;
+      const x = attachments.length === 1 ? (options.runtimeIdentity ? 64 : 50) : 50 - width / 2 + (width / Math.max(1, attachments.length - 1)) * index;
       const id = `attachment-${attachment.toLowerCase()}`;
       nodes.push({ id, label: attachment, eyebrow: "BOUNDARY", x, y: 73, stepId: `attach-${attachment.toLowerCase()}`, tone: "attachment" });
-      edges.push({ from: "node-1", to: id });
+      edges.push({ from: options.runtimeIdentity ? "runtime-identity" : "node-1", to: id });
     });
   }
   if (options.multiProvider) {
@@ -122,7 +126,7 @@ function topologyFor(options: { attachments?: string[]; multiNode?: boolean; mul
       nodes.push({ id, label: provider, eyebrow: "PROVIDER", x: 14 + index * 18, y: 88, stepId: "provider", tone: "provider" });
       edges.push({ from: attachments[0] ? `attachment-${attachments[0].toLowerCase()}` : "node-1", to: id });
     });
-  } else if (attachments.length) {
+  } else if (attachments.length && options.includeTarget !== false) {
     nodes.push({ id: "provider", label: "Provider / runtime target", eyebrow: "UPSTREAM", x: 50, y: 88, stepId: "provider", tone: "provider" });
     edges.push({ from: `attachment-${attachments[0].toLowerCase()}`, to: "provider" });
   }
@@ -223,15 +227,59 @@ function attachmentStep(attachment: string): LabStep {
     ]
   });
   if (lower === "l2") return liveStep("attachment", { ...base,
-    detail: "Instrument application/agent semantics with the released TypeScript or Python Scaniom SDK. L2 adds semantic action context while the Node/Gate stays authoritative.",
+    detail: "Instrument application/agent semantics with the released TypeScript or Python Scaniom SDK. L2 guards actions before consequence and records the observed result afterward through the same Node/Gate authority.",
     surface: "Application repository · VS Code/IDE",
-    artifacts: ["@scaniom/sdk@0.4.1 or scaniom==0.4.1", "workload identity", "Node URL"],
+    artifacts: ["@scaniom/sdk@0.4.1 or scaniom==0.4.1", "shared B1 workload runtime identity", "Scaniom Node URL"],
     commands: ["scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom attach l2 --workload {{workload}} --lang python", "scaniom runtime identity status --workload {{workload}}", "scaniom attach test l2 --workload {{workload}} --lang typescript --model {{model}} -- \"Say hello\"", "scaniom attach status --workload {{workload}}"],
+    notes: ["L2 uses the same B1 workload identity family as L1 and L4. Preserve the shared l1,l2,l4 scope instead of narrowing the identity to L2 only.", "Provider routes are optional for semantic action guarding. They are only required when the SDK also sends model/provider traffic."],
     guideOptions: [
-      { id: "typescript", label: "TypeScript", icon: "typescript", kicker: "@SCANIOM/SDK", description: "Install the released TypeScript SDK into the real application or agent repository.", surface: "VS Code / Node.js / TypeScript repo", flow: ["Agent/app", "@scaniom/sdk", "Scaniom Node", "Gate"], install: ["npm install @scaniom/sdk@0.4.1"], commands: ["scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l2", "scaniom attach test l2 --workload {{workload}} --lang typescript --model {{model}} -- \"Say hello\""], code: `import { Scaniom } from \"@scaniom/sdk\";\n\nconst scaniom = new Scaniom({\n  nodeUrl: process.env.SCANIOM_NODE_URL!,\n  workloadId: process.env.SCANIOM_WORKLOAD_ID!,\n  runtimeToken: process.env.SCANIOM_RUNTIME_TOKEN,\n});\n\nconst { decision, result } = await scaniom.guardAction({\n  action: \"tool_call\",\n  text: JSON.stringify({ customerId: \"cust_123\" }),\n  target: \"crm://customers/cust_123\",\n  tools: [\"crm.updateCustomer\"],\n  capabilities: [\"tool_use\", \"write\"],\n  production: true,\n  execute: () => crm.updateCustomer(\"cust_123\", { status: \"active\" }),\n});\n\nconsole.log(decision.machineAction, result);` },
-      { id: "python", label: "Python", icon: "python", kicker: "SCANIOM PYPI", description: "Install the released Python SDK in the Python application/agent environment.", surface: "Python app / agent / worker", flow: ["Python agent", "scaniom SDK", "Scaniom Node", "Gate"], install: ["python3 -m pip install scaniom==0.4.1"], commands: ["scaniom attach l2 --workload {{workload}} --lang python", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l2", "scaniom attach test l2 --workload {{workload}} --lang python --model {{model}} -- \"Say hello\""], code: `from scaniom import Scaniom\nimport os\n\nscaniom = Scaniom(\n    node_url=os.environ[\"SCANIOM_NODE_URL\"],\n    workload_id=os.environ[\"SCANIOM_WORKLOAD_ID\"],\n    runtime_token=os.environ.get(\"SCANIOM_RUNTIME_TOKEN\"),\n)\n\nresult = scaniom.guard_tool(\n    tool=\"crm.update_customer\",\n    input={\"customer_id\": \"cust_123\"},\n    target=\"crm://customers/cust_123\",\n    capabilities=[\"write\"],\n    production=True,\n    execute=lambda: crm.update_customer(\"cust_123\", status=\"active\"),\n)\n\nprint(result.decision[\"machineAction\"], result.result)` },
-      { id: "container", label: "Docker", icon: "docker", kicker: "CONTAINERIZED APP", description: "Keep the SDK inside the application image; inject only Scaniom runtime identity and the private Node URL at runtime.", surface: "Docker Compose / container runtime", flow: ["App container", "SDK", "Node service", "Gate"], commands: ["scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom runtime identity status --workload {{workload}}"], code: `environment:\n  SCANIOM_NODE_URL: http://scaniom-node:8787\n  SCANIOM_WORKLOAD_ID: {{workload}}\n  SCANIOM_RUNTIME_TOKEN: \${SCANIOM_RUNTIME_TOKEN}` },
-      { id: "kubernetes", label: "Kubernetes", icon: "kubernetes", kicker: "NATIVE IDENTITY READY", description: "Use SDK instrumentation in the workload Pod and exchange native ServiceAccount/SPIFFE/cloud identity into Scaniom runtime identity when configured.", surface: "Kubernetes workload Pod", flow: ["Pod", "SDK", "Node Service", "Gate"], commands: ["scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom runtime identity native status --workload {{workload}}", "scaniom runtime identity status --workload {{workload}}"], code: `env:\n  - name: SCANIOM_NODE_URL\n    value: http://scaniom-node.scaniom.svc:8787\n  - name: SCANIOM_WORKLOAD_ID\n    value: {{workload}}\n# Native identity can replace copied steady-state runtime tokens.` },
+      { id: "typescript", label: "TypeScript", icon: "typescript", kicker: "@SCANIOM/SDK", description: "Install the released TypeScript SDK into the real application or agent repository and guard a semantic action around its actual consequence.", surface: "VS Code / Node.js / TypeScript repo", flow: ["Agent/app", "@scaniom/sdk", "Scaniom Node + Gate", "Consequence", "Observe"], install: ["npm install @scaniom/sdk@0.4.1"], commands: ["scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom runtime identity status --workload {{workload}}"], code: `import { Scaniom } from "@scaniom/sdk";
+
+const scaniom = new Scaniom({
+  nodeUrl: process.env.SCANIOM_NODE_URL!,
+  workloadId: process.env.SCANIOM_WORKLOAD_ID!,
+  runtimeBootstrapToken: process.env.SCANIOM_RUNTIME_BOOTSTRAP_TOKEN,
+  runtimeToken: process.env.SCANIOM_RUNTIME_TOKEN,
+});
+
+const { decision, result } = await scaniom.guardTool({
+  tool: "crm.updateCustomer",
+  input: { customerId: "cust_123", status: "active" },
+  target: "crm://customers/cust_123",
+  production: true,
+  execute: () => crm.updateCustomer("cust_123", { status: "active" }),
+});
+
+console.log(decision.machineAction, result);`, notes: ["The copy-once bootstrap is exchanged by the SDK for short-lived scn_ri_v1 runtime authority and subsequent renewal is automatic."] },
+      { id: "python", label: "Python", icon: "python", kicker: "SCANIOM PYPI", description: "Use the released Python SDK with the same Node/Gate and workload identity contract.", surface: "Python service / agent / worker", flow: ["Python agent", "scaniom SDK", "Scaniom Node + Gate", "Consequence", "Observe"], install: ["python3 -m pip install scaniom==0.4.1"], commands: ["scaniom attach l2 --workload {{workload}} --lang python", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom runtime identity status --workload {{workload}}"], code: `from scaniom import Scaniom
+import os
+
+scaniom = Scaniom(
+    node_url=os.environ["SCANIOM_NODE_URL"],
+    workload_id=os.environ["SCANIOM_WORKLOAD_ID"],
+    runtime_bootstrap_token=os.environ.get("SCANIOM_RUNTIME_BOOTSTRAP_TOKEN"),
+    runtime_token=os.environ.get("SCANIOM_RUNTIME_TOKEN"),
+)
+
+result = scaniom.guard_tool(
+    tool="crm.update_customer",
+    input={"customerId": "cust_123", "status": "active"},
+    target="crm://customers/cust_123",
+    production=True,
+    execute=lambda: crm.update_customer("cust_123", status="active"),
+)
+
+print(result.decision["machineAction"], result.result)` },
+      { id: "container", label: "Docker", icon: "docker", kicker: "APPLICATION CONTAINER", description: "Install the public SDK in the app image and inject only Scaniom workload/runtime authority into the application container.", surface: "Dockerfile / Compose", flow: ["App container", "SDK", "Private Node", "Gate", "Consequence"], commands: ["scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom runtime identity status --workload {{workload}}"], code: `# application container
+SCANIOM_NODE_URL=http://scaniom-node:8787
+SCANIOM_WORKLOAD_ID={{workload}}
+SCANIOM_RUNTIME_BOOTSTRAP_TOKEN=<copy-once deployment secret>
+# Provider credentials remain on the Scaniom Node.` },
+      { id: "kubernetes", label: "Kubernetes", icon: "kubernetes", kicker: "NATIVE WORKLOAD IDENTITY", description: "Use the same L2 SDK in Kubernetes; prefer native workload identity when the cluster trust is configured.", surface: "Kubernetes workload", flow: ["Pod", "SDK", "Node Service", "Gate", "Consequence"], commands: ["scaniom runtime identity native status --workload {{workload}}", "scaniom attach l2 --workload {{workload}} --lang typescript", "scaniom attach status --workload {{workload}}"], code: `# Kubernetes runtime
+SCANIOM_NODE_URL=http://scaniom-node.scaniom.svc.cluster.local:8787
+SCANIOM_WORKLOAD_ID={{workload}}
+SCANIOM_NATIVE_IDENTITY_TOKEN_FILE=/var/run/scaniom-native/token
+# Native identity can replace copied bootstrap material.` },
     ]
   });
   if (lower === "l3") return liveStep("attachment", { ...base,
@@ -250,9 +298,9 @@ function attachmentStep(attachment: string): LabStep {
     detail: "Run the Scaniom sidecar beside an existing workload and route that workload through the local boundary without rewriting every provider call.",
     surface: "Workload host · Docker/Kubernetes/VM",
     artifacts: ["sidecar :8790", "L4 runtime identity", "existing application"],
-    commands: ["scaniom attach l4 --workload {{workload}} --port 8790", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l4", "scaniom attach test l4 --workload {{workload}} --model {{model}} -- \"Say hello\"", "scaniom attach status --workload {{workload}}"],
+    commands: ["scaniom attach l4 --workload {{workload}} --port 8790", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom attach test l4 --workload {{workload}} --model {{model}} -- \"Say hello\"", "scaniom attach status --workload {{workload}}"],
     guideOptions: [
-      { id: "local", label: "Local / VM", icon: "server", kicker: "WORKLOAD-LOCAL", description: "Run the sidecar beside the service and point application model traffic to localhost/private sidecar address.", surface: "VM or host process", flow: ["Workload", "L4 sidecar", "Node", "Provider"], commands: ["scaniom attach l4 --workload {{workload}} --port 8790", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l4", "scaniom attach test l4 --workload {{workload}} --model {{model}} -- \"Say hello\""] },
+      { id: "local", label: "Local / VM", icon: "server", kicker: "WORKLOAD-LOCAL", description: "Run the sidecar beside the service and point application model traffic to localhost/private sidecar address.", surface: "VM or host process", flow: ["Workload", "L4 sidecar", "Node", "Provider"], commands: ["scaniom attach l4 --workload {{workload}} --port 8790", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom attach test l4 --workload {{workload}} --model {{model}} -- \"Say hello\""] },
       { id: "docker", label: "Docker", icon: "docker", kicker: "SAME APP NETWORK", description: "Run the Scaniom sidecar on the workload network and route the application to the sidecar service.", surface: "Docker Compose / container network", flow: ["App container", "L4 sidecar", "Node", "Provider"], commands: ["scaniom attach l4 --workload {{workload}} --port 8790", "scaniom runtime identity status --workload {{workload}}"], code: `# application\nAI_BASE_URL=http://scaniom-sidecar:8790/v1\n\n# sidecar forwards to the private Scaniom Node service.` },
       { id: "kubernetes", label: "Kubernetes", icon: "kubernetes", kicker: "POD SIDECAR", description: "Place the sidecar in the same Pod so workload traffic crosses Scaniom before leaving the Pod.", surface: "Kubernetes Pod", flow: ["App container", "Sidecar container", "Node Service", "Provider"], commands: ["scaniom attach l4 --workload {{workload}} --port 8790", "scaniom runtime identity native status --workload {{workload}}"], code: `# application container\nenv:\n  - name: AI_BASE_URL\n    value: http://127.0.0.1:8790/v1\n# sidecar container shares the Pod network namespace.` },
     ]
@@ -295,23 +343,27 @@ function attachmentName(id: string): string {
   return ({ L1: "API Route", L2: "SDK", L3: "Model Runtime", L4: "Sidecar", L5: "Environment Gateway", MCP: "MCP Gateway", L6: "Provider Native" } as Record<string, string>)[id] || id;
 }
 
-function runtimeSteps(attachments: string[], providers: string[], options: { multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean } = {}): LabStep[] {
+function runtimeSteps(attachments: string[], providers: string[], options: { multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; includeTarget?: boolean } = {}): LabStep[] {
   const steps: LabStep[] = [
     liveStep("address", { id: "address", label: "Scaniom Address", eyebrow: "WORKLOAD IDENTITY", group: "fabric", depth: 1, dependsOn: ["workload"], detail: "Issue the signed Scaniom Address that binds behavior and runtime authority to this workload.", why: "Evidence must remain attributable to a real workload before any runtime boundary is attached.", surface: "Scaniom Control / CLI", commands: ["scaniom address issue --workload {{workload}} --ttl 24", "scaniom runtime identity status --workload {{workload}}"] }),
     liveStep("node", { id: "node", label: options.multiNode ? "Node pool" : "Scaniom Node", eyebrow: "MACHINE AUTHORITY", group: "fabric", depth: 1, dependsOn: ["address"], detail: options.multiNode ? "Enroll multiple Nodes, start them in the real runtime environment, then bind the workload to a pool." : "Enroll and run the Scaniom Node beside the protected runtime.", why: "The Node owns machine-speed identity, trajectory, risk, policy and Gate decisions.", surface: options.multiNode ? "VM/Docker/Kubernetes/managed K8s" : "Local/VM/Docker/Kubernetes/private runtime", commands: options.multiNode ? ["scaniom fabric add nodes --env {{environment}} --prefix open-immune-node --count 3", "scaniom node list", "scaniom node health", "scaniom fabric"] : ["scaniom node enroll open-immune-node --env {{environment}} --background", "scaniom node health", "scaniom node doctor"] }),
     liveStep("policy", { id: "policy", label: "Environment policy", eyebrow: "GATE POLICY", group: "fabric", depth: 1, dependsOn: ["node"], detail: "Publish the policy the Node will apply before consequential execution.", why: "Attachment code never owns policy; the environment policy remains authoritative.", surface: "Scaniom Control / CLI", commands: ["scaniom policy set --env {{environment}} --mode enforce", "scaniom policy list"] }),
   ];
 
+  if (options.runtimeIdentity) {
+    steps.push(liveStep("runtimeIdentity", { id: "runtime-identity", label: "Runtime identity", eyebrow: "WORKLOAD AUTHORITY", group: "runtime", depth: 0, dependsOn: ["policy"], detail: "Create or reuse the workload's B1 runtime identity and preserve the shared L1/L2/L4 attachment scope. The SDK exchanges copy-once bootstrap material for renewable scn_ri_v1 authority through the Node.", why: "L2 actions need workload-scoped runtime authority without putting Control or provider credentials in the per-action path.", surface: "Scaniom Control / CLI / workload deployment secret", artifacts: ["active runtime identity", "L2 attachment scope", "copy-once bootstrap or native workload identity"], commands: ["scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom runtime identity status --workload {{workload}}"], notes: ["Do not narrow an existing B1 identity to L2 only. L1, L2 and L4 share the frozen managed runtime-identity scope.", "Open Immune never reads or stores bootstrap/runtime token values."] }));
+  }
+
   const needsProvider = attachments.some((value) => ["L1", "L4"].includes(value)) || options.multiProvider || options.immunex;
   if (needsProvider) {
     steps.push(liveStep("provider", { id: "provider", label: options.multiProvider ? "Provider routes + BYOK" : "Provider route + BYOK", eyebrow: "NODE-LOCAL CREDENTIALS", group: "runtime", depth: 0, dependsOn: ["policy"], detail: options.multiProvider ? "Configure multiple real provider routes and Node-local credentials while preserving one Scaniom workload identity, policy, Gate and trajectory." : "Configure the provider route and provider credential on the Scaniom Node or enterprise secret store.", why: "Open Immune never asks for raw AI provider keys. Control stores route metadata and secret references; the Node or enterprise secret system owns the value.", surface: "Node host / Kubernetes Secret / enterprise secret store", artifacts: ["OpenAI / Anthropic / Gemini keys", "AWS credential chain for Bedrock", "CUSTOM_MODEL_TOKEN for custom routes"], commands: providerCommands(providers, Boolean(options.multiProvider)), notes: ["Enter provider keys through `scaniom secret configure ...` on the Node host or materialize them from the enterprise secret system.", "Do not paste raw provider keys into Open Immune or Scaniom Control.", "Multi-provider routes share one workload identity and can contribute to one correlated trajectory."], guideOptions: providerGuideOptions() }));
-  } else {
+  } else if (options.includeTarget !== false) {
     steps.push(externalStep({ id: "provider", label: "Runtime target", eyebrow: "UPSTREAM TARGET", group: "runtime", depth: 0, dependsOn: ["workload"], detail: "Provide the real model runtime, MCP server or provider-native target required by this lab.", why: "The lab exercises a real execution target; Open Immune never fabricates upstream success.", surface: "Target runtime environment", commands: ["scaniom attach architecture"] }));
   }
 
   for (const attachment of attachments) {
     const step = attachmentStep(attachment);
-    step.dependsOn = needsProvider && ["L1", "L4"].includes(attachment) ? ["provider"] : ["policy"];
+    step.dependsOn = needsProvider && ["L1", "L4"].includes(attachment) ? ["provider"] : options.runtimeIdentity ? ["runtime-identity"] : ["policy"];
     steps.push(step);
   }
 
@@ -323,11 +375,11 @@ function runtimeSteps(attachments: string[], providers: string[], options: { mul
   return steps;
 }
 
-function manifest(input: Omit<LabManifest, "steps" | "topology"> & { steps?: LabStep[]; topology?: LabManifest["topology"]; runtime?: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean } }): LabManifest {
+function manifest(input: Omit<LabManifest, "steps" | "topology"> & { steps?: LabStep[]; topology?: LabManifest["topology"]; runtime?: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; includeTarget?: boolean } }): LabManifest {
   const { runtime, steps: providedSteps, topology: providedTopology, ...base } = input;
   const attachments = base.attachments;
   const steps = providedSteps || [...authoritySteps(), ...scopeSteps(), ...runtimeSteps(runtime?.attachments || attachments, base.providers, runtime)];
-  const topology = providedTopology || topologyFor({ attachments, multiNode: runtime?.multiNode, multiProvider: runtime?.multiProvider });
+  const topology = providedTopology || topologyFor({ attachments, multiNode: runtime?.multiNode, multiProvider: runtime?.multiProvider, runtimeIdentity: runtime?.runtimeIdentity, includeTarget: runtime?.includeTarget });
   return { ...base, steps, topology };
 }
 
@@ -346,8 +398,8 @@ const labs: LabManifest[] = [
     { id: "sdk", label: "Public SDKs", eyebrow: "L2 DISTRIBUTION", x: 50, y: 64, stepId: "sdk-distributions", tone: "attachment" },
   ], edges: [{ from: "control", to: "identity" }, { from: "identity", to: "sdk" }] } }),
   manifest({ id: "d02-l1-full-cycle", code: "D02", kind: "lab", title: "L1 Full Cycle", subtitle: "Application API traffic → Scaniom Node → real AI provider.", summary: "Build the API-route boundary from public install and OIS Auth through scope, identity, Node, policy, BYOK provider route, application routing, real traffic and proof.", goal: "Complete one real provider-backed request through L1 and inspect Gate/trajectory/proof.", difficulty: "Foundation", attachments: ["L1"], platforms: ["IDE", "Local", "VM", "Docker", "Kubernetes"], providers: ["OpenAI"], stacks: ["Scaniom Node", "Application API client"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L1"] } }),
-  manifest({ id: "d03-l2-agent-sdk", code: "D03", kind: "lab", title: "L2 Agent SDK", subtitle: "Instrument application/agent semantics with the released Scaniom SDK.", summary: "Install the real TypeScript or Python SDK in an application repository and send semantic actions through the same workload identity and Node/Gate.", goal: "Execute a guarded application/agent action and verify L2 attachment evidence.", difficulty: "Intermediate", attachments: ["L2"], platforms: ["VS Code/IDE", "Node.js", "Python", "Docker"], providers: ["Any configured provider"], stacks: ["@scaniom/sdk", "Python scaniom SDK"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L2"] } }),
-  manifest({ id: "d04-l4-sidecar", code: "D04", kind: "lab", title: "L4 Sidecar", subtitle: "Protect an existing workload without rewriting every provider call.", summary: "Deploy a Scaniom sidecar beside the workload in local, VM, Docker or Kubernetes runtime placement and route traffic through it.", goal: "Run real workload traffic through the L4 sidecar and inspect evidence.", difficulty: "Intermediate", attachments: ["L4"], platforms: ["Docker", "Kubernetes", "VM"], providers: ["OpenAI-compatible"], stacks: ["Sidecar", "Existing app"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L4"] } }),
+  manifest({ id: "d03-l2-agent-sdk", code: "D03", kind: "lab", title: "L2 Agent SDK", subtitle: "Guard real application/agent semantics with the released TypeScript and Python Scaniom SDKs.", summary: "Reuse the accepted OIS authority and protected scope, establish shared B1 workload runtime identity, execute harmless real semantic consequences through both public SDKs, then verify L2 evidence and signed proof from Scaniom.", goal: "Finish with TypeScript + Python L2 guard → consequence → observe cycles and Scaniom-authoritative SDK evidence/proof.", difficulty: "Intermediate", attachments: ["L2"], platforms: ["VS Code/IDE", "Node.js", "Python", "Docker", "Kubernetes"], providers: [], stacks: ["@scaniom/sdk@0.4.1", "scaniom==0.4.1", "B1 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L2"], runtimeIdentity: true, includeTarget: false } }),
+  manifest({ id: "d04-l4-sidecar", code: "D04", kind: "lab", title: "L4 Sidecar", subtitle: "Protect an existing workload without rewriting every provider call.", summary: "Deploy the released Scaniom sidecar beside the real workload, preserve the shared B1 L1/L2/L4 runtime identity, route actual application traffic through the sidecar, and let live Scaniom sidecar evidence close the Lab automatically.", goal: "Finish with real L4 sidecar traffic, Gate/trajectory evidence and an L4/sidecar signed proof for the selected workload.", difficulty: "Intermediate", attachments: ["L4"], platforms: ["Docker", "Kubernetes", "VM", "Local development"], providers: ["OpenAI-compatible"], stacks: ["Scaniom Sidecar", "Existing app", "B1 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L4"], runtimeIdentity: true } }),
   manifest({ id: "d05-l3-model-runtime", code: "D05", kind: "lab", title: "L3 Model Runtime", subtitle: "Gate vLLM, NVIDIA NIM, Triton or compatible inference before execution.", summary: "Place the released runtime adapter beside the real model runtime on GPU Linux, Docker or Kubernetes.", goal: "Run a real inference target through the L3 boundary.", difficulty: "Advanced", attachments: ["L3"], platforms: ["GPU Linux", "Docker", "Kubernetes"], providers: ["vLLM", "NIM", "Triton", "OpenAI-compatible runtime"], stacks: ["Model runtime", "L3 adapter"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-model-runtime", runtime: { attachments: ["L3"] } }),
   manifest({ id: "d06-l5-environment-gateway", code: "D06", kind: "lab", title: "L5 Environment Gateway", subtitle: "Protect explicit environment ingress while preserving per-workload identity.", summary: "Deploy the Environment Gateway at a cluster/VPC/private boundary and require workload attribution on every request.", goal: "Exercise real multi-workload environment ingress through L5.", difficulty: "Advanced", attachments: ["L5"], platforms: ["Kubernetes", "VM", "VPC/private network"], providers: ["Any configured provider"], stacks: ["Environment Gateway"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L5"] } }),
   manifest({ id: "d07-mcp-gateway", code: "D07", kind: "lab", title: "MCP Gateway", subtitle: "Gate Streamable HTTP MCP tool calls before server/tool consequence.", summary: "Place the Scaniom MCP Gateway between a real MCP client/agent and MCP server while preserving server, session and tool lineage.", goal: "Run a real tools/call through the MCP boundary and inspect proof.", difficulty: "Advanced", attachments: ["MCP"], platforms: ["Node.js", "Docker", "Kubernetes"], providers: ["MCP server"], stacks: ["MCP", "Tools"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["MCP"] } }),
@@ -401,6 +453,39 @@ function attachmentVerified(step: LabStep, context: OpenIiContextResponse): bool
   }));
 }
 
+const ATTACHMENT_EVIDENCE_SOURCE: Record<string, string> = {
+  l1: "provider_proxy",
+  l2: "sdk",
+  l3: "runtime_hook",
+  l4: "sidecar",
+  l5: "gateway",
+  mcp: "mcp_gateway",
+  l6: "provider_native",
+};
+
+function singleAttachmentEvidenceSource(lab: LabManifest): string | null {
+  if (lab.attachments.length !== 1) return null;
+  return ATTACHMENT_EVIDENCE_SOURCE[String(lab.attachments[0] || "").toLowerCase()] || null;
+}
+
+function managedRuntimeIdentityVerified(context: OpenIiContextResponse, workloadId: string | null | undefined, requiredAttachment: "l2" | "l4"): boolean {
+  const identity = context.runtimeIdentity?.identity;
+  const attachments = (identity?.attachments || []).map((item) => String(item).toLowerCase());
+  return Boolean(identity
+    && identity.workloadId === workloadId
+    && String(identity.status || "").toLowerCase() === "active"
+    && attachments.includes(requiredAttachment)
+    && attachments.includes("l1")
+    && attachments.includes("l2")
+    && attachments.includes("l4"));
+}
+
+function requiredManagedAttachment(lab: LabManifest): "l2" | "l4" | null {
+  if (lab.id === "d03-l2-agent-sdk") return "l2";
+  if (lab.id === "d04-l4-sidecar") return "l4";
+  return null;
+}
+
 export function completionVerified(step: LabStep, context: OpenIiContextResponse, lab: LabManifest): boolean {
   const environmentId = context.workspace?.environmentId;
   const workloadId = context.workspace?.workloadId;
@@ -417,6 +502,10 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
       return step.label === "Node pool" ? online.length >= 3 : Boolean(selectedLabNode(context)?.operational_state === "online");
     }
     case "policy": return Boolean(environmentId && (context.policies || []).some((item) => item.environment_id === environmentId));
+    case "runtimeIdentity": {
+      const required = requiredManagedAttachment(lab);
+      return required ? managedRuntimeIdentityVerified(context, workloadId, required) : false;
+    }
     case "provider": {
       const routes = (context.connections || []).filter((item) => item.workload_id === workloadId && item.status !== "paused");
       const readyRoutes = Number(context.attachments?.counts?.readyRoutes || 0);
@@ -426,16 +515,34 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
       }
       return true;
     }
-    case "attachment": return attachmentVerified(step, context);
-    case "behavior": return Boolean(context.attachments?.levels?.some((item) => Number(item.evidence?.total || 0) > 0));
+    case "attachment": {
+      const required = requiredManagedAttachment(lab);
+      if (required && !managedRuntimeIdentityVerified(context, workloadId, required)) return false;
+      return attachmentVerified(step, context);
+    }
+    case "behavior": {
+      const required = requiredManagedAttachment(lab);
+      if (required && !managedRuntimeIdentityVerified(context, workloadId, required)) return false;
+      const requiredSource = singleAttachmentEvidenceSource(lab);
+      if (!requiredSource) return Boolean(context.attachments?.levels?.some((item) => Number(item.evidence?.total || 0) > 0));
+      return Boolean(context.attachments?.levels?.some((item) => {
+        const id = String(item.id || item.level || "").toLowerCase();
+        return id === String(lab.attachments[0]).toLowerCase() && Number(item.evidence?.total || 0) > 0;
+      }));
+    }
     case "proof": {
       if (!workload) return false;
+      const required = requiredManagedAttachment(lab);
+      if (required && !managedRuntimeIdentityVerified(context, workloadId, required)) return false;
       const workloadName = String(workload.name || workload.slug || workload.id || "").trim().toLowerCase();
+      const requiredSource = singleAttachmentEvidenceSource(lab);
       const directProof = Boolean(context.proof?.evidence?.some((item) =>
         item.environment_id === environmentId
         && String(item.workload_name || "").trim().toLowerCase() === workloadName
         && item.verification !== "invalid"
+        && (!requiredSource || String(item.attachment_source || "").toLowerCase() === requiredSource)
       ));
+      if (requiredSource) return directProof;
       const correlatedProof = Boolean(context.correlatedProofs?.some((item) =>
         (item.workloadId === workloadId || String(item.workloadName || "").trim().toLowerCase() === workloadName)
         && String(item.verification || "").toLowerCase() === "valid"

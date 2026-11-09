@@ -220,6 +220,36 @@ export type OperatorProofState = {
   evidence?: OperatorProofEvidence[];
 };
 
+export type OperatorRuntimeIdentity = {
+  identityId?: string;
+  workloadId?: string;
+  workloadName?: string;
+  environmentId?: string;
+  scaniomAddress?: string;
+  status?: string;
+  generation?: number;
+  attachments?: string[];
+  lastIssuedAt?: string | null;
+  lastRenewedAt?: string | null;
+  revokedAt?: string | null;
+  lease?: {
+    leaseId?: string;
+    credentialId?: string;
+    generation?: number;
+    status?: string;
+    issuedAt?: string;
+    renewAfter?: string;
+    expiresAt?: string;
+    authoritySource?: string;
+  } | null;
+  [key: string]: unknown;
+};
+
+export type OperatorRuntimeIdentityState = {
+  ok?: boolean;
+  identity?: OperatorRuntimeIdentity | null;
+};
+
 export type OperatorCorrelatedProof = {
   proofId?: string;
   correlationId?: string;
@@ -260,6 +290,7 @@ export type OpenIiContextResponse = {
   connections?: OperatorConnection[];
   policies?: OperatorPolicy[];
   attachments?: OperatorAttachmentState | null;
+  runtimeIdentity?: OperatorRuntimeIdentityState | null;
   proof?: OperatorProofState | null;
   correlatedProofs?: OperatorCorrelatedProof[];
   execution?: OpenIiLocalExecution;

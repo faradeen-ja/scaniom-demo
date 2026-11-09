@@ -9,7 +9,7 @@ No Lab may import from `../scaniom`, execute `scripts/scaniom-cli.mjs` from priv
 
 ## Installed CLI authority contract
 
-All customer-real Lab runtime operations use the installed public `scaniom` command. A Lab may use shell only to orchestrate checks around the real CLI; shell scripts are never presented as Scaniom product commands and never replace Control/CLI authority.
+All customer-real Lab runtime operations use the released `scaniom` command or the equivalent Scaniom Control/Web authority. Shell harnesses under `demos/` exist only for engineering/CI acceptance; they are never a customer prerequisite, never appear as the normal Lab workflow, and never replace Control/CLI authority.
 
 Before a Lab can create or mutate environment, workload, Node, policy, attachment, traffic or proof state, it must verify:
 
