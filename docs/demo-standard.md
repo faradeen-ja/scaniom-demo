@@ -5,3 +5,18 @@ Every Open Immune Lab must state what it proves, which accepted public Scaniom a
 A Lab must guide the operator end-to-end instead of jumping directly to an attachment command. Where relevant, the runbook covers public release verification, Scaniom CLI installation, OIS Auth, environment/workload scope, Scaniom Address, Node, policy, provider BYOK, runtime identity, application/runtime/deployment integration, real traffic, Gate/trajectory and signed proof.
 
 No Lab may import from `../scaniom`, execute `scripts/scaniom-cli.mjs` from private source, require an unpublished package, copy provider keys into Open Immune, or mark a step complete without real Scaniom state/evidence.
+
+
+## Installed CLI authority contract
+
+All customer-real Lab runtime operations use the installed public `scaniom` command. A Lab may use shell only to orchestrate checks around the real CLI; shell scripts are never presented as Scaniom product commands and never replace Control/CLI authority.
+
+Before a Lab can create or mutate environment, workload, Node, policy, attachment, traffic or proof state, it must verify:
+
+1. Open Immune Web has an active HttpOnly operator session for the selected Control profile.
+2. `scaniom` resolves from the operator installation outside the Open Immune repository.
+3. `scaniom version --json` is accepted `R18 / 0.4.1`.
+4. CLI profile URL/type matches the selected Open Immune Control profile.
+5. `scaniom auth status` and `scaniom whoami` succeed.
+
+Web and CLI credentials remain separate. Their parity is the shared Scaniom Control state, not credential sharing.

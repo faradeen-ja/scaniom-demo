@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; source "$ROOT/scripts/lib/common.sh"; ensure_public_profile
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; source "$ROOT/scripts/lib/common.sh"; require_open_immune_authority
 W="${SCANIOM_WORKLOAD:-scaniom-demo-agent}"; M="${SCANIOM_MODEL:-gpt-5-mini}"
 scaniom node health
 printf '\nBlock only this Node host/process from Control, keep Node running, then press Enter.\n'; read -r _

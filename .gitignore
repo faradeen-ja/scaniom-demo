@@ -25,3 +25,6 @@ docs/open-ii-vercel.md
 docs/repo-audit-2026-11-06.md
 
 .open-ii-last-*-backup
+
+# Open Immune never owns or executes a Scaniom CLI binary
+bin/

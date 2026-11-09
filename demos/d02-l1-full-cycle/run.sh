@@ -12,8 +12,8 @@ scaniom node health
 scaniom attach l1 --workload "$WORKLOAD" --node "$NODE" --preset openai --model "$MODEL"
 if ! scaniom node health | grep -q OPENAI; then
   info "Configure Node-local provider credential, then rerun:"
-  info "$BIN secret configure OPENAI_API_KEY --node $NODE"
-  info "$BIN node restart"
+  info "scaniom secret configure OPENAI_API_KEY --node $NODE"
+  info "scaniom node restart"
   exit 3
 fi
 scaniom attach test l1 --workload "$WORKLOAD" --model "$MODEL" -- "Say hello in one sentence"

@@ -24,11 +24,20 @@ test("library preview does not start a Lab until the explicit Start action", () 
 test("inspector exposes where to work, real commands and runtime integration code", () => {
   const source = read("components/workbench/OpenImmuneWorkbench.tsx");
   for (const token of ["WORK HERE", "REQUIRES", "REAL SCANIOM COMMANDS", "PLACEMENT / INTEGRATION", "GuideModal", "WorkSurfaceLinks", "Scaniom Control ↗", "Copy CLI"]) assert.match(source, new RegExp(token));
-  assert.match(source, /isScaniomCliCommand/);
+  assert.match(source, /isReleasedScaniomCliCommand/);
   assert.match(source, /guideOptions/);
   assert.match(source, /ProviderReality/);
   assert.match(source, /ResolvedRuntimeValues/);
   assert.match(source, /Never paste provider keys here/);
+});
+
+test("D03 Inspector shows real runtime identity authority without exposing bootstrap material", () => {
+  const source = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(source, /RuntimeIdentityReality/);
+  assert.match(source, /REAL RUNTIME IDENTITY/);
+  assert.match(source, /\/console\/settings\/runtime-access/);
+  assert.match(source, /--attachments l1,l2,l4/);
+  assert.match(source, /never receives the copy-once bootstrap/i);
 });
 
 test("OIS Auth replaces the card-stack context page", () => {
@@ -130,4 +139,34 @@ test("Start A-Z exposes the interactive seven-boundary Immune Fabric and GitHub 
   for (const level of ["L1", "L2", "L3", "L4", "L5", "MCP", "L6"]) assert.ok(fabric.includes(level), `missing ${level}`);
   assert.match(release, /faradeen-ja\/scaniom-releases/);
   assert.match(release, /GITHUB ↗/);
+});
+
+
+test("Workbench exposes only commands accepted by the released CLI contract", () => {
+  const workbench = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(workbench, /isReleasedScaniomCliCommand/);
+  assert.doesNotMatch(workbench, /function isScaniomCliCommand/);
+});
+
+test("D02+ Lab starts fail closed when Open Immune Web authority is absent", () => {
+  const workbench = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(workbench, /!\["d00-account-auth", "d01-public-install"\]\.includes\(preview\.id\)/);
+  assert.match(workbench, /disabled=\{webAuthorityMissing\}/);
+  assert.match(workbench, /Connect Scaniom to start/);
+});
+
+test("CLI parity challenge proves live Web authorization without sharing the browser token", () => {
+  const parity = read("lib/open-ii/cli-parity.ts");
+  const approve = read("app/api/auth/scaniom/cli-parity/approve/route.ts");
+  const consoleSource = read("components/OisAuthConsole.tsx");
+  const common = read("scripts/lib/common.sh");
+  assert.match(parity, /randomBytes\(24\)/);
+  assert.match(approve, /validateOpenIiSession/);
+  assert.match(approve, /sameOriginRequest/);
+  assert.doesNotMatch(approve, /session\.token/);
+  assert.match(consoleSource, /cliParityChallenge/);
+  assert.match(consoleSource, /cli-parity\/approve/);
+  assert.match(common, /cli-parity\/start/);
+  assert.match(common, /cli-parity\/status/);
+  assert.match(common, /no browser token is shared with the CLI/);
 });
