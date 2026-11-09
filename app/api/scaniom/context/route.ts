@@ -14,6 +14,7 @@ import type {
   OperatorProofState,
   OperatorCorrelatedProof,
   OperatorRuntimeIdentityState,
+  OperatorModelRuntimeState,
 } from "@/lib/open-ii/types";
 
 export const runtime = "nodejs";
@@ -64,13 +65,17 @@ export async function GET(request: Request) {
     const runtimeIdentityPath = workspace?.workloadId
       ? `/api/v1/operator/runtime-identities?workloadId=${encodeURIComponent(workspace.workloadId)}`
       : null;
+    const modelRuntimePath = workspace?.workloadId
+      ? `/api/v1/operator/model-runtimes?workload=${encodeURIComponent(workspace.workloadId)}`
+      : null;
 
-    const [nodes, connections, policies, attachments, runtimeIdentity, proof, correlatedEnvelope, execution] = await Promise.all([
+    const [nodes, connections, policies, attachments, runtimeIdentity, modelRuntimeState, proof, correlatedEnvelope, execution] = await Promise.all([
       optionalItems<OperatorNode>(current.profile, current.session.token, "/api/v1/operator/nodes"),
       optionalItems<OperatorConnection>(current.profile, current.session.token, "/api/v1/operator/connections"),
       optionalItems<OperatorPolicy>(current.profile, current.session.token, "/api/v1/operator/policy"),
       optionalAttachmentState(current.profile, current.session.token, workspace?.workloadId),
       runtimeIdentityPath ? optionalJson<OperatorRuntimeIdentityState>(current.profile, current.session.token, runtimeIdentityPath) : Promise.resolve(null),
+      modelRuntimePath ? optionalJson<OperatorModelRuntimeState>(current.profile, current.session.token, modelRuntimePath) : Promise.resolve(null),
       optionalJson<OperatorProofState>(current.profile, current.session.token, `/api/v1/operator/proof?window=24h&limit=100${environmentParam}`),
       optionalJson<{ items?: OperatorCorrelatedProof[] }>(current.profile, current.session.token, `/api/v1/operator/correlated-proofs${correlatedParam}`),
       readLocalExecutionState(),
@@ -94,6 +99,7 @@ export async function GET(request: Request) {
       policies,
       attachments,
       runtimeIdentity,
+      modelRuntimes: Array.isArray(modelRuntimeState?.runtimes) ? modelRuntimeState.runtimes : [],
       proof,
       correlatedProofs: Array.isArray(correlatedEnvelope?.items) ? correlatedEnvelope.items : [],
       execution,

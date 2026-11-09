@@ -148,3 +148,31 @@ test("D04 verifies only from shared B1 identity plus selected-workload L4 sideca
   assert.notEqual(l1Only.runtimeSteps.find((step) => step.id === "attach-l4")?.status, "verified");
   assert.notEqual(l1Only.runtimeSteps.find((step) => step.id === "proof")?.status, "verified");
 });
+
+
+test("D05 verifies only from a real model runtime, explicit L3 identity, runtime_hook evidence and L3 proof", () => {
+  const lab = labById("d05-l3-model-runtime")!;
+  const live = context({
+    workspace: { version: 1, profileName: "cloud", organizationId: "org1", environmentId: "env1", workloadId: "work1" },
+    workloads: [{ id: "work1", name: "Model Runtime", slug: "model-runtime", kind: "service", status: "active", environment_id: "env1", active_address: "scn://example/model-runtime" }],
+    nodes: [{ id: "node1", name: "gpu-node-01", environment_id: "env1", operational_state: "online" }],
+    policies: [{ environment_id: "env1", mode: "enforce", version: 4 }],
+    modelRuntimes: [{ id: "rt1", environmentId: "env1", workloadId: "work1", name: "primary-vllm", kind: "vllm", endpoint: "http://vllm:8000", modelHint: "model-a", authSecretRef: null, status: "active" }],
+    runtimeIdentity: { identity: { identityId: "ri-l3", workloadId: "work1", status: "active", generation: 1, attachments: ["l3"], lease: null } },
+    attachments: { levels: [{ id: "l3", level: "L3", configured: true, ready: true, evidence: { total: 3 } }] },
+    proof: { evidence: [{ id: "receipt-l3", kind: "receipt", occurred_at: "2026-11-09T00:00:00.000Z", environment_id: "env1", environment_name: "Production", workload_name: "Model Runtime", node_name: "gpu-node-01", provider: "runtime:vllm", attachment_source: "runtime_hook", attachment_label: "L3", policy_version: 4, policy_digest: "sha256:l3", machine_action: "pass", count: 1, behavior_event_id: "beh-l3", merkle_root: null, key_fingerprint: "key-l3", verification: "valid" }] },
+  });
+  const runtime = buildLabRuntime(lab, live);
+  for (const id of ["provider", "runtime-identity", "attach-l3", "behavior", "proof"]) assert.equal(runtime.runtimeSteps.find((step) => step.id === id)?.status, "verified", id);
+
+  const noTarget = buildLabRuntime(lab, { ...live, modelRuntimes: [] });
+  assert.equal(noTarget.runtimeSteps.find((step) => step.id === "provider")?.status, "ready");
+  assert.equal(noTarget.runtimeSteps.find((step) => step.id === "attach-l3")?.status, "locked");
+
+  const defaultB1Only = buildLabRuntime(lab, { ...live, runtimeIdentity: { identity: { ...live.runtimeIdentity!.identity!, attachments: ["l1", "l2", "l4"] } } });
+  assert.equal(defaultB1Only.runtimeSteps.find((step) => step.id === "runtime-identity")?.status, "ready");
+  assert.equal(defaultB1Only.runtimeSteps.find((step) => step.id === "attach-l3")?.status, "locked");
+
+  const sidecarProof = buildLabRuntime(lab, { ...live, proof: { evidence: [{ ...live.proof!.evidence![0], attachment_source: "sidecar", attachment_label: "L4" }] } });
+  assert.equal(sidecarProof.runtimeSteps.find((step) => step.id === "proof")?.status, "ready");
+});

@@ -250,6 +250,33 @@ export type OperatorRuntimeIdentityState = {
   identity?: OperatorRuntimeIdentity | null;
 };
 
+export type OperatorModelRuntimeKind = "vllm" | "nvidia_nim" | "triton" | "openai_compatible";
+
+export type OperatorModelRuntimeAdapter = {
+  id: string;
+  organizationId?: string;
+  environmentId: string;
+  environmentName?: string;
+  workloadId: string;
+  workloadName?: string;
+  workloadSlug?: string;
+  name: string;
+  kind: OperatorModelRuntimeKind;
+  endpoint: string;
+  modelHint?: string | null;
+  authSecretRef?: string | null;
+  status: "active" | "archived";
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type OperatorModelRuntimeState = {
+  ok?: boolean;
+  contract?: string;
+  kinds?: OperatorModelRuntimeKind[];
+  runtimes?: OperatorModelRuntimeAdapter[];
+};
+
 export type OperatorCorrelatedProof = {
   proofId?: string;
   correlationId?: string;
@@ -291,6 +318,7 @@ export type OpenIiContextResponse = {
   policies?: OperatorPolicy[];
   attachments?: OperatorAttachmentState | null;
   runtimeIdentity?: OperatorRuntimeIdentityState | null;
+  modelRuntimes?: OperatorModelRuntimeAdapter[];
   proof?: OperatorProofState | null;
   correlatedProofs?: OperatorCorrelatedProof[];
   execution?: OpenIiLocalExecution;

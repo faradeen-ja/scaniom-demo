@@ -173,3 +173,23 @@ test("D04 is a Workbench-first L4 flow with shared B1 identity and no user-facin
   assert.ok(l4.guideOptions?.every((option) => option.commands.every((command) => !command.includes("demos/") && !command.endsWith("run.sh"))));
   assert.match(fs.readFileSync("demos/d04-l4-sidecar/README.md", "utf8"), /Normal users do not run/);
 });
+
+
+test("D05 is a Workbench-first L3 flow with live runtime inventory and explicit least-privilege identity", () => {
+  const lab = labById("d05-l3-model-runtime")!;
+  const target = lab.steps.find((step) => step.id === "provider")!;
+  const identity = lab.steps.find((step) => step.id === "runtime-identity")!;
+  const l3 = lab.steps.find((step) => step.id === "attach-l3")!;
+  assert.equal(target.completion, "runtimeTarget");
+  assert.equal(identity.completion, "runtimeIdentity");
+  assert.ok(identity.commands?.some((command) => command.includes("--attachments l3")));
+  assert.ok(identity.commands?.every((command) => !command.includes("--attachments l1,l2,l4")));
+  assert.deepEqual(l3.dependsOn, ["provider", "runtime-identity"]);
+  assert.deepEqual(l3.guideOptions?.map((option) => option.id), ["vllm", "nim", "triton", "compatible"]);
+  assert.ok(l3.commands?.some((command) => command.startsWith("scaniom attach l3")));
+  assert.ok(l3.commands?.some((command) => command.startsWith("scaniom attach test l3")));
+  const serialized = JSON.stringify(lab);
+  for (const kind of ["vllm", "nvidia_nim", "triton", "openai_compatible"]) assert.match(serialized, new RegExp(kind));
+  assert.match(fs.readFileSync("demos/d05-l3-model-runtime/README.md", "utf8"), /Normal users do not run/);
+  assert.match(fs.readFileSync("demos/d05-l3-model-runtime/README.md", "utf8"), /runtime_hook/);
+});
