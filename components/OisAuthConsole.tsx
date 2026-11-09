@@ -31,6 +31,7 @@ export function OisAuthConsole() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [scopeHelp, setScopeHelp] = useState(false);
+  const [cliParity, setCliParity] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -59,6 +60,23 @@ export function OisAuthConsole() {
     window.addEventListener("open-ii-auth-changed", refresh);
     return () => { cancelled = true; window.removeEventListener("open-ii-auth-changed", refresh); };
   }, [load]);
+
+  useEffect(() => {
+    if (!auth?.signedIn) return;
+    const url = new URL(window.location.href);
+    const challengeId = url.searchParams.get("cliParityChallenge")?.trim() || "";
+    if (!challengeId) return;
+    let cancelled = false;
+    void api<{ status: string }>("/api/auth/scaniom/cli-parity/approve", { method: "POST", body: JSON.stringify({ challengeId }) }).then((result) => {
+      if (cancelled) return;
+      setCliParity(result.status === "approved" ? "CLI parity challenge approved. Return to the terminal." : "");
+      url.searchParams.delete("cliParityChallenge");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }).catch((err: unknown) => {
+      if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+    });
+    return () => { cancelled = true; };
+  }, [auth?.signedIn]);
 
   const visibleWorkloads = useMemo(() => !context ? [] : !environment ? context.workloads : context.workloads.filter((item) => String(item.environment_id || item.environmentId || "") === environment), [context, environment]);
   const selectedEnvironment = context?.environments.find((item) => item.id === context.workspace?.environmentId);
@@ -134,6 +152,7 @@ export function OisAuthConsole() {
       </div>
     </section> : null}
 
+    {cliParity ? <p className="connection-card connected">{cliParity}</p> : null}
     {error ? <p className="error-box">{error}</p> : null}
 
     {scopeHelp ? <div className="ois-auth-modal" role="dialog" aria-modal="true" aria-label="Create protected scope"><button className="ois-auth-modal-backdrop" aria-label="Close" onClick={() => setScopeHelp(false)}/><section><header><div><small>NEW PROTECTED SCOPE</small><h2>Environment → workload → return to OIS Auth.</h2></div><button onClick={() => setScopeHelp(false)}>×</button></header><div className="ois-auth-modal-grid">

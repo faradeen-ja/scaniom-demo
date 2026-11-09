@@ -18,6 +18,7 @@ import {
   type LabStepGroup,
 } from "@/lib/open-ii/labs";
 import { labProgress, resourceTitle, selectedEnvironment, selectedWorkload, topologyNodeStatus, workloadEnvironmentId } from "@/lib/open-ii/workbench";
+import { isReleasedScaniomCliCommand } from "@/lib/open-ii/scaniom-cli-contract";
 import type { OpenIiContextResponse, OperatorWorkload } from "@/lib/open-ii/types";
 import { StackIcon } from "@/components/StackIcon";
 import styles from "./OpenImmuneWorkbench.module.css";
@@ -59,11 +60,6 @@ function runtimeWithoutContext(labId: string): LabRuntime | null {
 
 function copyText(value: string) {
   void navigator.clipboard?.writeText(value);
-}
-
-function isScaniomCliCommand(value: string): boolean {
-  const trimmed = value.trim();
-  return /^scaniom\b/.test(trimmed) || /^[A-Z0-9_]+=\S+\s+scaniom\b/.test(trimmed);
 }
 
 function providerIcon(provider: string): string {
@@ -154,6 +150,24 @@ function ResolvedRuntimeValues({ context, lab }: { context: OpenIiContextRespons
 }
 
 
+function RuntimeIdentityReality({ context }: { context: OpenIiContextResponse }) {
+  const identity = context.runtimeIdentity?.identity || null;
+  const attachments = (identity?.attachments || []).map((item) => String(item).toUpperCase()).join(" + ") || "—";
+  const rows = identity ? [
+    ["STATE", String(identity.status || "unknown").toUpperCase()],
+    ["IDENTITY", identity.identityId || "—"],
+    ["GENERATION", String(identity.generation ?? "—")],
+    ["ATTACHMENTS", attachments],
+    ["LEASE", identity.lease ? String(identity.lease.status || "active").toUpperCase() : "AWAITING EXCHANGE"],
+  ] : [["STATE", "NOT BOOTSTRAPPED"]];
+  return <div className={styles.resolvedValues}>
+    <header><div><small>REAL RUNTIME IDENTITY</small><b>Scaniom Control reports workload authority; secrets stay outside the browser.</b></div><StackIcon kind="shield" size={24}/></header>
+    <div className={styles.resolvedGrid}>{rows.map(([label, value]) => <div key={label}><span>{label}</span><code>{value}</code></div>)}</div>
+    <div className={styles.secretBoundaryNote}><StackIcon kind="scaniom" size={18}/><p><b>L2 shares the frozen B1 managed identity scope with L1 and L4.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p></div>
+  </div>;
+}
+
+
 function controlPathForStep(stepId: string): string {
   if (stepId === "profile") return "/console/settings/control";
   if (stepId === "identity") return "/console/account";
@@ -163,6 +177,7 @@ function controlPathForStep(stepId: string): string {
   if (stepId === "address") return "/console/addresses";
   if (stepId === "node") return "/console/nodes";
   if (stepId === "policy") return "/console/policies";
+  if (stepId === "runtime-identity") return "/console/settings/runtime-access";
   if (stepId === "provider") return "/console/connect";
   if (stepId.startsWith("attach-")) return "/console/attachments";
   if (stepId.includes("immunex")) return "/console/immunex";
@@ -203,10 +218,10 @@ function GuideModal({ open, step, options, selected, context, lab, onSelect, onC
         <main className={styles.guideModalBody}>
           {selected ? <>
             <div className={styles.guideModalIntro}><i><StackIcon kind={selected.icon} size={28}/></i><div><small>{selected.kicker}</small><h3>{selected.label}</h3><p>{selected.description}</p></div></div>
-            <WorkSurfaceLinks step={step} context={context} command={resolvedCommands.find(isScaniomCliCommand)}/>
+            <WorkSurfaceLinks step={step} context={context} command={resolvedCommands.find(isReleasedScaniomCliCommand)}/>
             <div className={styles.guideModalFlow}>{selected.flow.map((node, index) => <div key={`${node}-${index}`}><span>{node}</span>{index < selected.flow.length - 1 ? <i>→</i> : null}</div>)}</div>
             {selected.install?.length ? <section className={styles.guideModalSection}><b>INSTALL IN PROJECT</b>{selected.install.map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</section> : null}
-            {resolvedCommands.filter(isScaniomCliCommand).length ? <section className={styles.guideModalSection}><b>SCANIOM CLI</b>{resolvedCommands.filter(isScaniomCliCommand).map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</section> : null}
+            {resolvedCommands.filter(isReleasedScaniomCliCommand).length ? <section className={styles.guideModalSection}><b>SCANIOM CLI</b>{resolvedCommands.filter(isReleasedScaniomCliCommand).map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</section> : null}
             {resolvedCode ? <section className={styles.guideModalSection}><b>DEPLOYMENT / CODE</b><div className={styles.guideModalCode}><pre><code>{resolvedCode}</code></pre><button onClick={() => copyText(resolvedCode)}>COPY</button></div></section> : null}
             {selected.notes?.length ? <section className={styles.guideModalNotes}>{selected.notes.map((note) => <p key={note}>{note}</p>)}</section> : null}
           </> : <div className={styles.guideModalEmpty}><StackIcon kind="terminal" size={30}/><h3>Choose an option.</h3><p>Select a provider, SDK language, runtime or deployment placement from the left.</p></div>}
@@ -328,6 +343,8 @@ function LabLibrary({
   const [previewId, setPreviewId] = useState(initialPreviewId);
   const preview = labById(previewId);
   const contextReady = Boolean(context?.workspace?.environmentId && context?.workspace?.workloadId);
+  const webAuthorityRequired = Boolean(preview && !["d00-account-auth", "d01-public-install"].includes(preview.id));
+  const webAuthorityMissing = webAuthorityRequired && !context;
   const architecturePath = preview ? [...preview.topology.nodes].sort((a, b) => a.y - b.y || a.x - b.x).map((node) => node.label) : [];
 
   return <div className={styles.libraryHome}>
@@ -384,7 +401,8 @@ function LabLibrary({
             <div><small>{context ? "REAL SCANIOM AUTHORITY" : "CONNECTION REQUIRED"}</small><b>{contextReady ? `${resourceTitle(selectedEnvironment(context!))} · ${resourceTitle(selectedWorkload(context!))}` : context ? "Environment/workload not selected" : "Complete OIS Auth to activate live authority"}</b></div>
           </div>
 
-          <button className={styles.startLabButton} onClick={() => onStart(preview.id)}>Start {preview.kind === "lab" ? "Lab" : "System Lab"}<span>→</span></button>
+          <button className={styles.startLabButton} disabled={webAuthorityMissing} onClick={() => { if (!webAuthorityMissing) onStart(preview.id); }}>{webAuthorityMissing ? "Connect Scaniom to start" : `Start ${preview.kind === "lab" ? "Lab" : "System Lab"}`}<span>→</span></button>
+          {webAuthorityMissing ? <p className={styles.previewSubtitle}>This Lab requires a live Open Immune Web authorization. Connect Scaniom first; no Fabric/runtime action will be presented as executable until Web authority is active.</p> : null}
           <Link className={styles.contextLink} href="/workspace">{contextReady ? "Review OIS Auth" : "Set up OIS Auth"} ↗</Link>
         </> : <div className={styles.previewEmpty}>
           <span>ARCHITECTURE</span><h2>Nothing selected yet.</h2><p>Use the tree to inspect a lab/system architecture before starting it.</p><Link href="/workspace">Review OIS Auth ↗</Link>
@@ -509,7 +527,7 @@ export function OpenImmuneWorkbench() {
   const selectedGuide = guideOptions.find((option) => option.id === guideChoice[selectedStep?.id || ""]) || guideOptions.find((option) => option.id === liveProvider) || (selectedStep?.id === "provider" ? null : guideOptions[0] || null);
   const guideCommands = selectedGuide?.commands.map((command) => context ? resolveLabCommand(command, context, lab) : command) || [];
   const baseCli = context?.cli || [];
-  const cliCommands = [...baseCli, ...(selectedGuide ? guideCommands : selectedCommands)].filter(isScaniomCliCommand);
+  const cliCommands = [...baseCli, ...(selectedGuide ? guideCommands : selectedCommands)].filter(isReleasedScaniomCliCommand);
   const allCli = cliCommands.filter((value, index, all) => all.indexOf(value) === index);
 
   return <section className={styles.shell}>
@@ -598,10 +616,11 @@ export function OpenImmuneWorkbench() {
               {selectedStep.surface ? <div><small>WORK HERE</small><b>{selectedStep.surface}</b></div> : null}
               {selectedStep.artifacts?.length ? <div><small>REQUIRES</small><b>{selectedStep.artifacts.join(" · ")}</b></div> : null}
             </div> : null}
-            <WorkSurfaceLinks step={selectedStep} context={context} command={selectedCommands.find(isScaniomCliCommand)}/>
+            <WorkSurfaceLinks step={selectedStep} context={context} command={selectedCommands.find(isReleasedScaniomCliCommand)}/>
             {selectedStep.notes?.length ? <div className={styles.stepNotes}><small>BOUNDARY NOTES</small>{selectedStep.notes.map((note) => <p key={note}>{note}</p>)}</div> : null}
             {selectedStep.id === "provider" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
-            {context && ["provider", "attach-l1", "attach-l2", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
+            {context && ["runtime-identity", "attach-l2"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context}/> : null}
+            {context && ["provider", "attach-l1", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 
             {guideOptions.length ? <div className={styles.guideSurface}>
               <div className={styles.guideSurfaceHead}><div><small>PLACEMENT / INTEGRATION</small><b>{selectedStep.id === "provider" ? "Choose a provider or private route." : "Choose where this boundary lives."}</b></div><span>{guideOptions.length} OPTIONS</span></div>
@@ -616,7 +635,7 @@ export function OpenImmuneWorkbench() {
             {selectedStep.id === "environment" && context ? <div className={styles.controlBlock}><label>Real environment<select value={context.workspace?.environmentId || ""} onChange={(event: ChangeEvent<HTMLSelectElement>) => void updateWorkspace(event.target.value, "")}><option value="">Select environment…</option>{context.environments.map((item) => <option key={item.id} value={item.id}>{resourceTitle(item)}</option>)}</select></label></div> : null}
             {selectedStep.id === "workload" && context ? <div className={styles.controlBlock}><label>Real workload<select value={context.workspace?.workloadId || ""} onChange={(event: ChangeEvent<HTMLSelectElement>) => void updateWorkspace(context.workspace?.environmentId || "", event.target.value)}><option value="">Select workload…</option>{visibleWorkloads.map((item: OperatorWorkload) => <option key={item.id} value={item.id}>{resourceTitle(item)}</option>)}</select></label></div> : null}
 
-            {!guideOptions.length && selectedCommands.filter(isScaniomCliCommand).length ? <div className={styles.commandList}><div className={styles.sectionLabel}>REAL SCANIOM COMMANDS</div>{selectedCommands.filter(isScaniomCliCommand).map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</div> : null}
+            {!guideOptions.length && selectedCommands.filter(isReleasedScaniomCliCommand).length ? <div className={styles.commandList}><div className={styles.sectionLabel}>REAL SCANIOM COMMANDS</div>{selectedCommands.filter(isReleasedScaniomCliCommand).map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</div> : null}
             {!guideOptions.length && selectedStep.code ? <div className={styles.integrationCode}><div className={styles.sectionLabel}>APPLICATION / RUNTIME INTEGRATION</div><pre><code>{context ? resolveLabCommand(selectedStep.code, context, lab) : selectedStep.code}</code></pre><button onClick={() => copyText(context ? resolveLabCommand(selectedStep.code || "", context, lab) : selectedStep.code || "")}>COPY CODE</button></div> : null}
 
             <div className={`${styles.inspectorNext} ${styles[`next_${selectedStep.status}`]}`}>

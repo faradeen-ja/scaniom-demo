@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { LAB_CATALOG, labById, labResolvedValues, resolveLabCommand } from "../lib/open-ii/labs";
+import { isReleasedScaniomCliCommand } from "../lib/open-ii/scaniom-cli-contract";
+import fs from "node:fs";
 
 test("every Lab manifest has unique steps with valid dependencies and topology refs", () => {
   const labIds = new Set<string>();
@@ -36,8 +38,8 @@ test("public release is metadata, not a blocking Lab tree step", () => {
 
 test("no Lab CLI surface leaks repo shell scripts", () => {
   for (const lab of LAB_CATALOG) for (const step of lab.steps) {
-    for (const command of step.commands || []) assert.doesNotMatch(command, /^\.\/|\/scripts\/|\/demos\//, `${lab.id}:${step.id}`);
-    for (const option of step.guideOptions || []) for (const command of option.commands) assert.doesNotMatch(command, /^\.\/|\/scripts\/|\/demos\//, `${lab.id}:${step.id}:${option.id}`);
+    for (const command of step.commands || []) assert.doesNotMatch(command, /^(?:\.\/|bash\s+scripts\/)|\/scripts\/|\/demos\/|\.\/bin\/scaniom|\.demo\/runtime\/bin\/scaniom/, `${lab.id}:${step.id}`);
+    for (const option of step.guideOptions || []) for (const command of option.commands) assert.doesNotMatch(command, /^(?:\.\/|bash\s+scripts\/)|\/scripts\/|\/demos\/|\.\/bin\/scaniom|\.demo\/runtime\/bin\/scaniom/, `${lab.id}:${step.id}:${option.id}`);
   }
 });
 
@@ -56,7 +58,23 @@ test("L2 offers TypeScript, Python, Docker and Kubernetes placements", () => {
   assert.deepEqual(step.guideOptions?.map((option) => option.id), ["typescript", "python", "container", "kubernetes"]);
   assert.ok(step.guideOptions?.find((option) => option.id === "typescript")?.install?.includes("npm install @scaniom/sdk@0.4.1"));
   assert.ok(step.guideOptions?.find((option) => option.id === "python")?.install?.includes("python3 -m pip install scaniom==0.4.1"));
+  const serialized = JSON.stringify(step);
+  assert.match(serialized, /runtimeBootstrapToken|runtime_bootstrap_token/);
+  assert.match(serialized, /--attachments l1,l2,l4/);
+  assert.doesNotMatch(serialized, /--attachments l2(?:["'\s]|$)/);
+  assert.doesNotMatch(serialized, /"write"/);
   assert.ok(step.commands?.every((command) => command.startsWith("scaniom ")));
+});
+
+test("D03 is provider-independent and preserves the shared B1 L1/L2/L4 runtime identity", () => {
+  const lab = labById("d03-l2-agent-sdk")!;
+  assert.deepEqual(lab.providers, []);
+  assert.ok(lab.steps.some((step) => step.id === "runtime-identity" && step.completion === "runtimeIdentity"));
+  assert.equal(lab.steps.some((step) => step.id === "provider"), false);
+  const identity = lab.steps.find((step) => step.id === "runtime-identity")!;
+  assert.ok(identity.commands?.some((command) => command.includes("--attachments l1,l2,l4")));
+  assert.deepEqual(lab.topology.nodes.some((node) => node.id === "runtime-identity"), true);
+  assert.deepEqual(lab.topology.nodes.some((node) => node.id === "provider"), false);
 });
 
 test("all seven attachment boundaries expose placement/integration choices", () => {
@@ -100,4 +118,46 @@ test("Lab commands resolve safe Control-observable placeholders but keep deploym
   const command = resolveLabCommand("scaniom attach l1 --workload {{workload}} --node {{node}} --preset {{provider}} --model {{model}}", context, lab);
   assert.equal(command, "scaniom attach l1 --workload agent --node prod-ai-01 --preset openai --model gpt-real");
   assert.match(values.nodeUrl, /^<private Scaniom Node service URL/);
+});
+
+
+test("every surfaced Scaniom command matches the released R18/0.4.1 CLI contract", () => {
+  for (const lab of LAB_CATALOG) for (const step of lab.steps) {
+    for (const command of step.commands || []) if (command.includes("scaniom ")) assert.equal(isReleasedScaniomCliCommand(command), true, `${lab.id}:${step.id}: ${command}`);
+    for (const option of step.guideOptions || []) for (const command of option.commands) if (command.includes("scaniom ")) assert.equal(isReleasedScaniomCliCommand(command), true, `${lab.id}:${step.id}:${option.id}: ${command}`);
+  }
+});
+
+test("customer-real demos use installed CLI authority and never an Open Immune CLI home or repo binary", () => {
+  const common = fs.readFileSync("scripts/lib/common.sh", "utf8");
+  assert.match(common, /type -P scaniom/);
+  assert.match(common, /require_open_immune_authority/);
+  assert.match(common, /require_open_ii_web_auth/);
+  assert.match(common, /require_scaniom_cli_auth/);
+  assert.doesNotMatch(common, /BIN="\$ROOT\/bin\/scaniom"|HOME="\$DEMO_HOME"|SCANIOM_STANDALONE_BIN/);
+  const ensureScope = fs.readFileSync("scripts/ensure-scope.sh", "utf8");
+  assert.match(ensureScope, /require_open_immune_authority/);
+  for (const rel of ["d02-l1-full-cycle","d03-l2-agent-sdk","d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","d07-mcp-gateway","d08-l6-provider-native","d09-fleet-failover","d11-multi-provider","d12-immunex"]) {
+    const run = fs.readFileSync(`demos/${rel}/run.sh`, "utf8");
+    assert.match(run, /ensure-scope\.sh/);
+    assert.doesNotMatch(run, /\$BIN|\.\/bin\/scaniom|\.demo\/runtime\/bin\/scaniom|HOME=\$DEMO_HOME/);
+  }
+  for (const rel of ["d10-offline-continuity","flagship-full-fabric"]) {
+    const run = fs.readFileSync(`demos/${rel}/run.sh`, "utf8");
+    assert.match(run, /require_open_immune_authority/);
+  }
+});
+
+
+test("public Open Immune docs only advertise released Scaniom CLI command families", () => {
+  const files = ["README.md", "docs/start-here.md", "docs/authentication.md", "app/docs/page.tsx", "components/OisAuthConsole.tsx"];
+  const top = /^(?:version|artifacts|profile|login|auth|whoami|logout|open|env|workload|address|node|provider|providers|connect|secret|runtime|configure|attach|fabric|fleet|live|top|explain|trajectory|proof|verify|policy|authority|immunex|demo|ask|scenario|status|setup|next|guide|doctor|docs|immune|deploy|cli)$/;
+  for (const file of files) {
+    const source = fs.readFileSync(file, "utf8");
+    for (const match of source.matchAll(/scaniom\s+([a-z][a-z0-9-]*)/g)) {
+      const command = match[1];
+      if (["sdk", "import"].includes(command)) continue;
+      assert.match(command, top, `${file}: unsupported Scaniom command family ${command}`);
+    }
+  }
 });

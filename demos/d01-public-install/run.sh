@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$ROOT/scripts/lib/common.sh"
 "$ROOT/scripts/verify-public-release.sh"
-"$ROOT/scripts/install-public-cli.sh"
+require_scaniom_cli_install
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/npm"; cd "$TMP/npm"; npm init -y >/dev/null
 npm install --ignore-scripts --no-audit --no-fund "@scaniom/sdk@${SCANIOM_VERSION}"

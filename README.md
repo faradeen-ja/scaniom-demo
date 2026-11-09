@@ -550,3 +550,5 @@ Open Immune is intentionally localhost-first right now. GitHub is the canonical 
 - Provider secret values remain Node-local or in the customer's secret system.
 - Open Immune browser profiles cannot opt themselves into private-network/custom-CA power.
 - A Lab is complete only when the relevant real Scaniom state/evidence exists.
+
+> **CLI authority:** Open Immune never runs a repo-local `bin/scaniom` or private source launcher. Customer-real Labs use the installed accepted `scaniom` command from PATH. Web and CLI use separate approved sessions against the same Control and both must be active before runtime/fabric mutations.
