@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ScaniomConnection } from "@/components/ScaniomConnection";
 import { StackIcon } from "@/components/StackIcon";
 import type { OpenIiContextResponse } from "@/lib/open-ii/types";
@@ -23,6 +23,15 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 const title = (value: { id: string; name?: string; slug?: string } | undefined) => value?.name || value?.slug || value?.id || "—";
 const copy = (value: string) => { void navigator.clipboard?.writeText(value); };
 
+function subscribeOnline(callback: () => void): () => void {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => { window.removeEventListener("online", callback); window.removeEventListener("offline", callback); };
+}
+
+function browserOnlineSnapshot(): boolean { return navigator.onLine; }
+function serverOnlineSnapshot(): boolean { return true; }
+
 export function OisAuthConsole() {
   const [auth, setAuth] = useState<AuthStatus | null>(null);
   const [context, setContext] = useState<OpenIiContextResponse | null>(null);
@@ -32,8 +41,10 @@ export function OisAuthConsole() {
   const [error, setError] = useState("");
   const [scopeHelp, setScopeHelp] = useState(false);
   const [cliParity, setCliParity] = useState("");
+  const online = useSyncExternalStore(subscribeOnline, browserOnlineSnapshot, serverOnlineSnapshot);
 
   const load = useCallback(async () => {
+    if (!navigator.onLine) return;
     try {
       const nextAuth = await api<AuthStatus>("/api/auth/scaniom/status");
       setAuth(nextAuth);
@@ -47,6 +58,7 @@ export function OisAuthConsole() {
   }, []);
 
   useEffect(() => {
+    if (!online) return;
     let cancelled = false;
     void api<AuthStatus>("/api/auth/scaniom/status").then(async (nextAuth) => {
       if (cancelled) return;
@@ -59,10 +71,10 @@ export function OisAuthConsole() {
     const refresh = () => { void load(); };
     window.addEventListener("open-ii-auth-changed", refresh);
     return () => { cancelled = true; window.removeEventListener("open-ii-auth-changed", refresh); };
-  }, [load]);
+  }, [load, online]);
 
   useEffect(() => {
-    if (!auth?.signedIn) return;
+    if (!auth?.signedIn || !online) return;
     const url = new URL(window.location.href);
     const challengeId = url.searchParams.get("cliParityChallenge")?.trim() || "";
     if (!challengeId) return;
@@ -76,14 +88,14 @@ export function OisAuthConsole() {
       if (!cancelled) setError(err instanceof Error ? err.message : String(err));
     });
     return () => { cancelled = true; };
-  }, [auth?.signedIn]);
+  }, [auth?.signedIn, online]);
 
   const visibleWorkloads = useMemo(() => !context ? [] : !environment ? context.workloads : context.workloads.filter((item) => String(item.environment_id || item.environmentId || "") === environment), [context, environment]);
   const selectedEnvironment = context?.environments.find((item) => item.id === context.workspace?.environmentId);
   const selectedWorkload = context?.workloads.find((item) => item.id === context.workspace?.workloadId);
   const signedIn = Boolean(auth?.signedIn);
   const scopeReady = Boolean(selectedEnvironment && selectedWorkload);
-  const ready = signedIn && scopeReady;
+  const ready = signedIn && scopeReady && online;
   const ownerName = context?.whoami.user.name || auth?.identity?.displayName || auth?.identity?.email || "Authorized operator";
   const controlUrl = auth?.profile.controlUrl || "https://control.scaniom.com";
   const profileName = auth?.profile.name || "cloud";
@@ -107,12 +119,14 @@ export function OisAuthConsole() {
 
   return <section className="ois-auth-console ois-auth-console-v2">
     <header className="ois-auth-v2-head">
-      <div><span className="eyebrow">OIS AUTH · OPEN IMMUNE ↔ SCANIOM</span><h1>{ready ? "Fabric authority ready." : signedIn ? "Finish the protected scope." : "Connect Scaniom authority."}</h1><p>Authorize once, select the real environment and workload, then every Lab uses the same Scaniom organization, identity and fabric state.</p></div>
+      <div><span className="eyebrow">OIS AUTH · OPEN IMMUNE ↔ SCANIOM</span><h1>{!online ? "Network offline." : ready ? "Fabric authority ready." : signedIn ? "Finish the protected scope." : "Connect Scaniom authority."}</h1><p>{!online ? "Open Immune will not launch or poll Scaniom Control while this browser is offline. Your existing session is not replaced; reconnect the network and retry." : "Authorize once, select the real environment and workload, then every Lab uses the same Scaniom organization, identity and fabric state."}</p></div>
       <div className="ois-auth-v2-actions">
-        <span className={`ois-auth-state ${ready ? "ready" : signedIn ? "partial" : "offline"}`}><i/><span>{ready ? "READY FOR LABS" : signedIn ? "AUTH ONLINE · SCOPE REQUIRED" : "AUTH REQUIRED"}</span></span>
+        <span className={`ois-auth-state ${!online ? "offline" : ready ? "ready" : signedIn ? "partial" : "offline"}`}><i/><span>{!online ? "NETWORK OFFLINE" : ready ? "READY FOR LABS" : signedIn ? "AUTH ONLINE · SCOPE REQUIRED" : "AUTH REQUIRED"}</span></span>
         {signedIn ? <button type="button" className="ois-auth-signout" disabled={busy} onClick={() => void signOut()}>Sign out</button> : null}
       </div>
     </header>
+
+    {!online ? <div className="ois-auth-offline-banner"><StackIcon kind="cloud" size={18}/><div><b>OFFLINE · SCANIOM CONTROL NOT CONTACTED</b><span>Reconnect this device to continue live authorization, resource refresh, Fabric state or Lab verification.</span></div></div> : null}
 
     <div className="ois-auth-progress-v2">
       {[{k:"CONTROL",v:auth?.profile.label || "Scaniom Cloud",done:Boolean(auth?.profile.name)},{k:"OWNER",v:ownerName,done:signedIn},{k:"ENVIRONMENT",v:title(selectedEnvironment),done:Boolean(selectedEnvironment)},{k:"WORKLOAD",v:title(selectedWorkload),done:Boolean(selectedWorkload)}].map((item, index) => <div key={item.k} className={item.done ? "done" : signedIn && index > 1 ? "next" : "locked"}><i>{item.done ? "✓" : index + 1}</i><span><small>{item.k}</small><b>{item.v}</b></span></div>)}
@@ -127,7 +141,7 @@ export function OisAuthConsole() {
           <div><dt>CONTROL</dt><dd><b>{auth?.profile.label}</b><span>{controlUrl}</span></dd></div>
           <div><dt>PROFILE</dt><dd><b>{profileName}</b><span>{auth?.profile.type}</span></dd></div>
         </dl>
-        <div className="ois-auth-mini-actions"><a href={`${controlUrl}/console/account`} target="_blank" rel="noreferrer">Account ↗</a><a href={`${controlUrl}/console/organization`} target="_blank" rel="noreferrer">Organization ↗</a><Link href="/profiles">Profiles</Link></div>
+        <div className="ois-auth-mini-actions">{online ? <><a href={`${controlUrl}/console/account`} target="_blank" rel="noreferrer">Account ↗</a><a href={`${controlUrl}/console/organization`} target="_blank" rel="noreferrer">Organization ↗</a></> : <span>Control links paused while offline</span>}<Link href="/profiles">Profiles</Link></div>
       </section>
 
       <section className="ois-auth-scope-v2">
@@ -137,7 +151,7 @@ export function OisAuthConsole() {
           <label><span>WORKLOAD</span><select value={workload} onChange={(event: ChangeEvent<HTMLSelectElement>) => setWorkload(event.target.value)}><option value="">Select real workload…</option>{visibleWorkloads.map((item) => <option key={item.id} value={item.id}>{title(item)}{item.kind ? ` · ${item.kind}` : ""}</option>)}</select></label>
           <button className="button" disabled={busy || !environment || !workload}>{busy ? "Syncing…" : scopeReady ? "Update scope" : "Use scope"}</button>
         </form>
-        <div className="ois-auth-scope-help-row"><p><b>New team/project?</b> Create an environment first, then register the workload that will carry Scaniom identity, policy, behavior and proof.</p><button type="button" onClick={() => setScopeHelp(true)}>How to create a scope →</button><button type="button" onClick={() => void load()}>Refresh resources</button></div>
+        <div className="ois-auth-scope-help-row"><p><b>New team/project?</b> Create an environment first, then register the workload that will carry Scaniom identity, policy, behavior and proof.</p><button type="button" onClick={() => setScopeHelp(true)}>How to create a scope →</button><button type="button" disabled={!online} onClick={() => void load()}>{online ? "Refresh resources" : "Offline"}</button></div>
         <div className="ois-auth-current-v2"><div><small>ENVIRONMENT</small><b>{title(selectedEnvironment)}</b><span>policy + deployment trust boundary</span></div><i>→</i><div><small>WORKLOAD</small><b>{title(selectedWorkload)}</b><span>application / agent / model / service</span></div><i>→</i><div><small>NEXT</small><b>{scopeReady ? "Open a Lab" : "Select both values"}</b><span>{scopeReady ? "identity → Node → policy → attachment" : "Labs stay preview-only until scope is ready"}</span></div></div>
       </section>
     </div>}
@@ -145,7 +159,7 @@ export function OisAuthConsole() {
     {signedIn ? <section className="ois-auth-parity-v2">
       <div className="ois-auth-section-title"><span>03</span><div><small>WEB + CLI PARITY</small><b>Same Control. Same owner. Same scope.</b></div></div>
       <div className="ois-auth-parity-grid">
-        <div><StackIcon kind="cloud" size={18}/><span><small>WEB</small><b>Scaniom Control</b><a href={`${controlUrl}/console/setup`} target="_blank" rel="noreferrer">Open Setup ↗</a></span></div>
+        <div><StackIcon kind="cloud" size={18}/><span><small>WEB</small><b>Scaniom Control</b>{online ? <a href={`${controlUrl}/console/setup`} target="_blank" rel="noreferrer">Open Setup ↗</a> : <em>Offline · Control link paused</em>}</span></div>
         <div><StackIcon kind="terminal" size={18}/><span><small>CLI AUTH</small><b>scaniom login · whoami</b><button type="button" onClick={() => copy(`scaniom profile test ${profileName}\nscaniom login\nscaniom whoami\nscaniom auth status`)}>Copy commands</button></span></div>
         <div><StackIcon kind="server" size={18}/><span><small>CLI SCOPE</small><b>{scopeReady ? title(selectedWorkload) : "select workload"}</b><button type="button" onClick={() => copy(selectedWorkload ? `scaniom workload use ${selectedWorkload.slug || selectedWorkload.name || selectedWorkload.id}` : "scaniom workload list")}>Copy command</button></span></div>
         <div><StackIcon kind="scaniom" size={18}/><span><small>LABS</small><b>{ready ? "live authority enabled" : "preview only"}</b><Link href="/workbench">{ready ? "Open Labs →" : "Preview Labs →"}</Link></span></div>

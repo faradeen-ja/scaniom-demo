@@ -343,8 +343,6 @@ function LabLibrary({
   const [previewId, setPreviewId] = useState(initialPreviewId);
   const preview = labById(previewId);
   const contextReady = Boolean(context?.workspace?.environmentId && context?.workspace?.workloadId);
-  const webAuthorityRequired = Boolean(preview && !["d00-account-auth", "d01-public-install"].includes(preview.id));
-  const webAuthorityMissing = webAuthorityRequired && !context;
   const architecturePath = preview ? [...preview.topology.nodes].sort((a, b) => a.y - b.y || a.x - b.x).map((node) => node.label) : [];
 
   return <div className={styles.libraryHome}>
@@ -398,11 +396,10 @@ function LabLibrary({
 
           <div className={styles.previewAuthority}>
             <i className={contextReady ? styles.authorityReady : ""}/>
-            <div><small>{context ? "REAL SCANIOM AUTHORITY" : "CONNECTION REQUIRED"}</small><b>{contextReady ? `${resourceTitle(selectedEnvironment(context!))} · ${resourceTitle(selectedWorkload(context!))}` : context ? "Environment/workload not selected" : "Complete OIS Auth to activate live authority"}</b></div>
+            <div><small>{context ? "REAL SCANIOM AUTHORITY" : "AUTHORITY STATUS"}</small><b>{contextReady ? `${resourceTitle(selectedEnvironment(context!))} · ${resourceTitle(selectedWorkload(context!))}` : context ? "Environment/workload not selected · enter Lab to continue setup" : "OIS Auth not connected · enter Lab to begin setup"}</b></div>
           </div>
 
-          <button className={styles.startLabButton} disabled={webAuthorityMissing} onClick={() => { if (!webAuthorityMissing) onStart(preview.id); }}>{webAuthorityMissing ? "Connect Scaniom to start" : `Start ${preview.kind === "lab" ? "Lab" : "System Lab"}`}<span>→</span></button>
-          {webAuthorityMissing ? <p className={styles.previewSubtitle}>This Lab requires a live Open Immune Web authorization. Connect Scaniom first; no Fabric/runtime action will be presented as executable until Web authority is active.</p> : null}
+          <button className={styles.startLabButton} onClick={() => onStart(preview.id)}>Go to {preview.kind === "lab" ? "Lab" : "System Lab"}<span>→</span></button>
           <Link className={styles.contextLink} href="/workspace">{contextReady ? "Review OIS Auth" : "Set up OIS Auth"} ↗</Link>
         </> : <div className={styles.previewEmpty}>
           <span>ARCHITECTURE</span><h2>Nothing selected yet.</h2><p>Use the tree to inspect a lab/system architecture before starting it.</p><Link href="/workspace">Review OIS Auth ↗</Link>
@@ -453,6 +450,7 @@ export function OpenImmuneWorkbench() {
     window.addEventListener("open-ii-auth-changed", refresh);
     return () => { cancelled = true; window.removeEventListener("open-ii-auth-changed", refresh); };
   }, [load]);
+
 
   const lab = useMemo(() => labById(selectedLabId), [selectedLabId]);
   const runtime = useMemo(() => lab ? (context ? buildLabRuntime(lab, context) : runtimeWithoutContext(lab.id)) : null, [lab, context]);
@@ -529,6 +527,7 @@ export function OpenImmuneWorkbench() {
   const baseCli = context?.cli || [];
   const cliCommands = [...baseCli, ...(selectedGuide ? guideCommands : selectedCommands)].filter(isReleasedScaniomCliCommand);
   const allCli = cliCommands.filter((value, index, all) => all.indexOf(value) === index);
+
 
   return <section className={styles.shell}>
     {catalogOpen ? <div className={styles.catalogOverlay}><LabLibrary onStart={selectLab} onClose={() => setCatalogOpen(false)} context={context} initialPreviewId={lab.id}/></div> : null}

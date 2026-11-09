@@ -13,6 +13,7 @@ import type {
   OperatorPolicy,
   OperatorProofState,
   OperatorCorrelatedProof,
+  OperatorRuntimeIdentityState,
 } from "@/lib/open-ii/types";
 
 export const runtime = "nodejs";
@@ -60,11 +61,16 @@ export async function GET(request: Request) {
     const environmentParam = workspace?.environmentId ? `&env=${encodeURIComponent(workspace.environmentId)}` : "";
     const correlatedParam = workspace?.environmentId ? `?environment=${encodeURIComponent(workspace.environmentId)}&limit=50` : "?limit=50";
 
-    const [nodes, connections, policies, attachments, proof, correlatedEnvelope, execution] = await Promise.all([
+    const runtimeIdentityPath = workspace?.workloadId
+      ? `/api/v1/operator/runtime-identities?workloadId=${encodeURIComponent(workspace.workloadId)}`
+      : null;
+
+    const [nodes, connections, policies, attachments, runtimeIdentity, proof, correlatedEnvelope, execution] = await Promise.all([
       optionalItems<OperatorNode>(current.profile, current.session.token, "/api/v1/operator/nodes"),
       optionalItems<OperatorConnection>(current.profile, current.session.token, "/api/v1/operator/connections"),
       optionalItems<OperatorPolicy>(current.profile, current.session.token, "/api/v1/operator/policy"),
       optionalAttachmentState(current.profile, current.session.token, workspace?.workloadId),
+      runtimeIdentityPath ? optionalJson<OperatorRuntimeIdentityState>(current.profile, current.session.token, runtimeIdentityPath) : Promise.resolve(null),
       optionalJson<OperatorProofState>(current.profile, current.session.token, `/api/v1/operator/proof?window=24h&limit=100${environmentParam}`),
       optionalJson<{ items?: OperatorCorrelatedProof[] }>(current.profile, current.session.token, `/api/v1/operator/correlated-proofs${correlatedParam}`),
       readLocalExecutionState(),
@@ -87,6 +93,7 @@ export async function GET(request: Request) {
       connections,
       policies,
       attachments,
+      runtimeIdentity,
       proof,
       correlatedProofs: Array.isArray(correlatedEnvelope?.items) ? correlatedEnvelope.items : [],
       execution,

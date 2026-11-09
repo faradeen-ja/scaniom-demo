@@ -413,7 +413,7 @@ scaniom runtime identity bootstrap \
 
 ```bash
 scaniom attach l4 --workload customer-agent --port 8790
-scaniom runtime identity bootstrap --workload customer-agent --attachments l4
+scaniom runtime identity bootstrap --workload customer-agent --attachments l1,l2,l4
 ```
 
 The application points its protected traffic at the sidecar; the sidecar forwards through Scaniom Node authority.
@@ -527,7 +527,7 @@ what architecture should exist
 what evidence would prove it
 ```
 
-Executable public run scripts remain under `demos/`. The Workbench is the visual engineering front end to those real contracts, not a replacement for them.
+Normal Open Immune users do **not** run `demos/*.sh`. The Workbench and Start A–Z are the product workflow: connect Scaniom, select real scope, place the boundary with released `scaniom` commands/deployment artifacts, send real application traffic, and let live Scaniom evidence verify the Lab automatically. Files under `demos/` are engineering/CI acceptance harnesses only.
 
 ---
 

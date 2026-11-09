@@ -97,14 +97,18 @@ test("provider selection exposes all released provider paths even when a lab has
 });
 
 
-test("Fabric Matrix stays free-form with permanent Tree and Inspector panes", () => {
+test("Fabric Matrix keeps permanent Fabric Tree and Inspector with no hide/show control layer", () => {
   const source = read("components/workbench/OpenImmuneWorkbench.tsx");
   const css = read("components/workbench/OpenImmuneWorkbench.module.css");
-  for (const retired of ["PanelChevron", "Hide Fabric Tree", "Show Fabric Tree", "Hide Inspector", "Show Inspector", "setTreeHidden", "setInspectorHidden", "FabricMatrixGuide", "StepContextRail", "DRAG NODES TO REFORM VIEW", "WHY FABRIC?", "panelToggle"]) assert.doesNotMatch(source, new RegExp(retired.replace(/[?]/g, "\\?")));
+  for (const retired of ["PanelChevron", "setTreeHidden", "setInspectorHidden", "FabricMatrixGuide", "StepContextRail", "DRAG NODES TO REFORM VIEW", "WHY FABRIC?", "treeVisible", "inspectorVisible", "toggleTreePane", "toggleInspectorPane", "paneToggle", "restorePane", "Hide Fabric Tree", "Show Fabric Tree", "Hide Inspector", "Show Inspector"]) assert.doesNotMatch(source, new RegExp(retired.replace(/[?]/g, "\\?")));
+  assert.match(source, /<aside className=\{styles\.treePane\}>/);
+  assert.match(source, /<aside className=\{styles\.inspectorPane\}>/);
   assert.match(source, /onPointerMove/);
   assert.match(source, /className=\{styles\.matrixResetButton\}/);
-  assert.match(css, /grid-template-areas:/);
+  assert.match(css, /OPEN-II WORKBENCH RESPONSIVE SYSTEM · SOURCE REBUILD V6/);
+  assert.match(css, /grid-template-areas:"tree matrix inspector" "intel intel intel"/);
   assert.match(css, /\.matrixResetButton\{/);
+  assert.match(css, /\.providerInspectorBlock\{/);
 });
 
 test("L3 multi-provider value card owns its rows and never uses the legacy horizontal flow", () => {
@@ -148,11 +152,14 @@ test("Workbench exposes only commands accepted by the released CLI contract", ()
   assert.doesNotMatch(workbench, /function isScaniomCliCommand/);
 });
 
-test("D02+ Lab starts fail closed when Open Immune Web authority is absent", () => {
+test("Lab selector always enters the real Fabric-building workspace while authority gates steps inside the Lab", () => {
   const workbench = read("components/workbench/OpenImmuneWorkbench.tsx");
-  assert.match(workbench, /!\["d00-account-auth", "d01-public-install"\]\.includes\(preview\.id\)/);
-  assert.match(workbench, /disabled=\{webAuthorityMissing\}/);
-  assert.match(workbench, /Connect Scaniom to start/);
+  assert.match(workbench, /onClick=\{\(\) => onStart\(preview\.id\)\}/);
+  assert.match(workbench, /Go to \{preview\.kind === "lab" \? "Lab" : "System Lab"\}/);
+  assert.match(workbench, /runtimeWithoutContext/);
+  assert.doesNotMatch(workbench, /webAuthorityMissing/);
+  assert.doesNotMatch(workbench, /Connect Scaniom to start/);
+  assert.doesNotMatch(workbench, /disabled=\{webAuthorityMissing\}/);
 });
 
 test("CLI parity challenge proves live Web authorization without sharing the browser token", () => {
@@ -169,4 +176,44 @@ test("CLI parity challenge proves live Web authorization without sharing the bro
   assert.match(common, /cli-parity\/start/);
   assert.match(common, /cli-parity\/status/);
   assert.match(common, /no browser token is shared with the CLI/);
+});
+
+
+test("Workbench responsive flow keeps Tree and Inspector visible without toggle state or blackout layers", () => {
+  const workbench = read("components/workbench/OpenImmuneWorkbench.tsx");
+  const css = read("components/workbench/OpenImmuneWorkbench.module.css");
+  assert.match(workbench, /FABRIC TREE/);
+  assert.match(workbench, /INSPECTOR/);
+  for (const retired of ["treeVisible", "inspectorVisible", "toggleTreePane", "toggleInspectorPane", "paneToggle", "restorePane", "globalPaneToggles", "mobilePaneBackdrop", "compactLayout", "useSyncExternalStore"]) assert.doesNotMatch(workbench, new RegExp(retired));
+  assert.match(css, /OPEN-II WORKBENCH RESPONSIVE SYSTEM · SOURCE REBUILD V6/);
+  assert.match(css, /max-width:1500px/);
+  assert.match(css, /\.workspace,\.workspace\.intelCollapsed\{display:flex!important;flex-direction:column!important;grid-template:none!important/);
+  assert.match(css, /\.providerInspectorBlock\{/);
+});
+
+test("OIS Auth and Scaniom connection expose explicit offline state without launching Control", () => {
+  const auth = read("components/OisAuthConsole.tsx");
+  const connection = read("components/ScaniomConnection.tsx");
+  assert.match(auth, /NETWORK OFFLINE/);
+  assert.match(auth, /OFFLINE · SCANIOM CONTROL NOT CONTACTED/);
+  assert.match(connection, /NETWORK OFFLINE/);
+  assert.match(connection, /navigator\.onLine/);
+});
+
+
+test("repo-wide responsive foundation covers both Lab states and every public surface", () => {
+  const globalCss = read("app/globals.css");
+  const workbenchCss = read("components/workbench/OpenImmuneWorkbench.module.css");
+  const immuneCss = read("components/ImmunityField.module.css");
+  for (const token of ["OPEN-II RESPONSIVE SYSTEM · SOURCE REBUILD V4", ".app-header nav", ".docs-provider-grid", ".profile-layout", ".ois-auth-v2-grid", ".scope-layout", ".attachment-fabric-guide"]) assert.ok(globalCss.includes(token), `missing V4 global responsive token: ${token}`);
+  for (const token of ["OPEN-II WORKBENCH RESPONSIVE SYSTEM · SOURCE REBUILD V6", ".libraryLayout", ".libraryTree", ".libraryVisual", ".libraryPreview", ".workspace", ".matrixPane", ".inspectorPane", ".guideModalCard"]) assert.ok(workbenchCss.includes(token), `missing V5 Workbench responsive token: ${token}`);
+  assert.match(workbenchCss, /@media\(max-width:1500px\), \(hover:none\) and \(pointer:coarse\)/);
+  assert.match(workbenchCss, /\.libraryLayout\{display:block!important/);
+  assert.match(workbenchCss, /\.workspace,\.workspace\.intelCollapsed\{display:flex!important;flex-direction:column!important;grid-template:none!important/);
+  assert.match(workbenchCss, /\.treePane,\.matrixPane,\.inspectorPane,\.intelligencePane\{[\s\S]*position:static!important[\s\S]*grid-area:auto!important[\s\S]*width:100%!important/);
+  assert.match(workbenchCss, /\.treePane\{order:1\}\.matrixPane\{order:2\}\.inspectorPane\{order:3\}\.intelligencePane\{order:4\}/);
+  assert.match(workbenchCss, /@media\(max-width:480px\)/);
+  assert.match(immuneCss, /OPEN-II IMMUNITY FIELD RESPONSIVE · SOURCE REBUILD V4/);
+  assert.match(immuneCss, /@media\(max-width:420px\)/);
+  assert.match(globalCss, /overflow-x:hidden/);
 });
