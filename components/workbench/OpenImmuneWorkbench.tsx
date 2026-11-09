@@ -132,6 +132,40 @@ function ProviderReality({ context, onOpen }: { context: OpenIiContextResponse |
   </section>;
 }
 
+function runtimeKindLabel(kind: string): string {
+  if (kind === "vllm") return "vLLM";
+  if (kind === "nvidia_nim") return "NVIDIA NIM";
+  if (kind === "triton") return "NVIDIA Triton";
+  if (kind === "openai_compatible") return "OpenAI-compatible";
+  return kind || "Runtime";
+}
+
+function ModelRuntimeReality({ context }: { context: OpenIiContextResponse | null }) {
+  const workloadId = context?.workspace?.workloadId;
+  const runtimes = (context?.modelRuntimes || []).filter((item) => item.workloadId === workloadId && item.status === "active");
+  return <section className={styles.providerInspectorBlock} aria-label="L3 model runtime authority">
+    <div className={styles.providerAuthorityStack}>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="gpu" size={18}/></span>
+        <div><small>REAL INFERENCE TARGET</small><b>vLLM · NIM · Triton · compatible runtime</b></div>
+      </div>
+      <div className={styles.providerAuthorityConnector} aria-hidden="true"><span/></div>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="scaniom" size={18}/></span>
+        <div><small>SCANIOM L3</small><b>Gate before inference · observe after outcome</b></div>
+      </div>
+    </div>
+    <div className={styles.providerRoutesPanel}>
+      <div className={styles.providerRoutesTitle}>REAL MODEL RUNTIMES FROM SCANIOM CONTROL</div>
+      {runtimes.length ? <div className={styles.providerRouteRows}>{runtimes.map((runtime) => <div className={styles.providerRouteRow} key={runtime.id}>
+        <span className={styles.providerRouteIcon}><StackIcon kind="gpu" size={17}/></span>
+        <div><small>{runtimeKindLabel(runtime.kind).toUpperCase()} · {runtime.status.toUpperCase()}</small><b>{runtime.name}</b><em>{runtime.endpoint} · {runtime.modelHint || "model chosen by request"}</em></div>
+      </div>)}</div> : <div className={styles.providerRoutesEmpty}>No active L3 model runtime is registered for the selected workload yet. Register the real target in Scaniom Control or with the released <code>scaniom attach l3</code> command, then refresh.</div>}
+      <p className={styles.providerRoutesNote}>Control stores the runtime endpoint and optional secret-reference name only. Runtime credential values remain at the protected runtime boundary and never enter Open Immune.</p>
+    </div>
+  </section>;
+}
+
 function ResolvedRuntimeValues({ context, lab }: { context: OpenIiContextResponse; lab: LabManifest }) {
   const values = labResolvedValues(context, lab);
   const rows = [
@@ -150,9 +184,10 @@ function ResolvedRuntimeValues({ context, lab }: { context: OpenIiContextRespons
 }
 
 
-function RuntimeIdentityReality({ context }: { context: OpenIiContextResponse }) {
+function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextResponse; lab: LabManifest }) {
   const identity = context.runtimeIdentity?.identity || null;
   const attachments = (identity?.attachments || []).map((item) => String(item).toUpperCase()).join(" + ") || "—";
+  const isL3 = lab.id === "d05-l3-model-runtime";
   const rows = identity ? [
     ["STATE", String(identity.status || "unknown").toUpperCase()],
     ["IDENTITY", identity.identityId || "—"],
@@ -163,12 +198,15 @@ function RuntimeIdentityReality({ context }: { context: OpenIiContextResponse })
   return <div className={styles.resolvedValues}>
     <header><div><small>REAL RUNTIME IDENTITY</small><b>Scaniom Control reports workload authority; secrets stay outside the browser.</b></div><StackIcon kind="shield" size={24}/></header>
     <div className={styles.resolvedGrid}>{rows.map(([label, value]) => <div key={label}><span>{label}</span><code>{value}</code></div>)}</div>
-    <div className={styles.secretBoundaryNote}><StackIcon kind="scaniom" size={18}/><p><b>L2 shares the frozen B1 managed identity scope with L1 and L4.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p></div>
+    <div className={styles.secretBoundaryNote}><StackIcon kind="scaniom" size={18}/>{isL3
+      ? <p><b>L3 is an explicit least-privilege runtime-identity scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l3</code>. The L3 adapter exchanges that bootstrap for renewable <code>scn_ri_v1</code> authority before using <code>/v1/runtime/guard</code> and <code>/v1/runtime/observe</code>.</p>
+      : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
+    </div>
   </div>;
 }
 
 
-function controlPathForStep(stepId: string): string {
+function controlPathForStep(stepId: string, lab?: LabManifest): string {
   if (stepId === "profile") return "/console/settings/control";
   if (stepId === "identity") return "/console/account";
   if (stepId === "organization") return "/console/organization";
@@ -178,7 +216,7 @@ function controlPathForStep(stepId: string): string {
   if (stepId === "node") return "/console/nodes";
   if (stepId === "policy") return "/console/policies";
   if (stepId === "runtime-identity") return "/console/settings/runtime-access";
-  if (stepId === "provider") return "/console/connect";
+  if (stepId === "provider") return lab?.id === "d05-l3-model-runtime" ? "/console/attachments" : "/console/connect";
   if (stepId.startsWith("attach-")) return "/console/attachments";
   if (stepId.includes("immunex")) return "/console/immunex";
   if (stepId.includes("fleet") || stepId.includes("pool") || stepId.includes("route")) return "/console/fleet";
@@ -192,13 +230,13 @@ function localPathForStep(stepId: string): string {
   return "/workbench";
 }
 
-function WorkSurfaceLinks({ step, context, command }: { step: LabRuntimeStep; context: OpenIiContextResponse | null; command?: string }) {
+function WorkSurfaceLinks({ step, context, command, lab }: { step: LabRuntimeStep; context: OpenIiContextResponse | null; command?: string; lab?: LabManifest }) {
   const control = context?.profile.controlUrl || "https://control.scaniom.com";
   return <div className={styles.workSurfaceLinks}>
     <span>WORK SURFACES</span>
     <div>
       <Link href={localPathForStep(step.id)}>Open Immune</Link>
-      <a href={`${control}${controlPathForStep(step.id)}`} target="_blank" rel="noreferrer">Scaniom Control ↗</a>
+      <a href={`${control}${controlPathForStep(step.id, lab)}`} target="_blank" rel="noreferrer">Scaniom Control ↗</a>
       {command ? <button type="button" onClick={() => copyText(command)}>Copy CLI</button> : null}
     </div>
   </div>;
@@ -218,7 +256,7 @@ function GuideModal({ open, step, options, selected, context, lab, onSelect, onC
         <main className={styles.guideModalBody}>
           {selected ? <>
             <div className={styles.guideModalIntro}><i><StackIcon kind={selected.icon} size={28}/></i><div><small>{selected.kicker}</small><h3>{selected.label}</h3><p>{selected.description}</p></div></div>
-            <WorkSurfaceLinks step={step} context={context} command={resolvedCommands.find(isReleasedScaniomCliCommand)}/>
+            <WorkSurfaceLinks step={step} context={context} command={resolvedCommands.find(isReleasedScaniomCliCommand)} lab={lab}/>
             <div className={styles.guideModalFlow}>{selected.flow.map((node, index) => <div key={`${node}-${index}`}><span>{node}</span>{index < selected.flow.length - 1 ? <i>→</i> : null}</div>)}</div>
             {selected.install?.length ? <section className={styles.guideModalSection}><b>INSTALL IN PROJECT</b>{selected.install.map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</section> : null}
             {resolvedCommands.filter(isReleasedScaniomCliCommand).length ? <section className={styles.guideModalSection}><b>SCANIOM CLI</b>{resolvedCommands.filter(isReleasedScaniomCliCommand).map((command) => <div className={styles.commandLine} key={command}><code>{command}</code><button onClick={() => copyText(command)}>COPY</button></div>)}</section> : null}
@@ -615,10 +653,11 @@ export function OpenImmuneWorkbench() {
               {selectedStep.surface ? <div><small>WORK HERE</small><b>{selectedStep.surface}</b></div> : null}
               {selectedStep.artifacts?.length ? <div><small>REQUIRES</small><b>{selectedStep.artifacts.join(" · ")}</b></div> : null}
             </div> : null}
-            <WorkSurfaceLinks step={selectedStep} context={context} command={selectedCommands.find(isReleasedScaniomCliCommand)}/>
+            <WorkSurfaceLinks step={selectedStep} context={context} command={selectedCommands.find(isReleasedScaniomCliCommand)} lab={lab}/>
             {selectedStep.notes?.length ? <div className={styles.stepNotes}><small>BOUNDARY NOTES</small>{selectedStep.notes.map((note) => <p key={note}>{note}</p>)}</div> : null}
-            {selectedStep.id === "provider" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
-            {context && ["runtime-identity", "attach-l2"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context}/> : null}
+            {selectedStep.id === "provider" && lab.id !== "d05-l3-model-runtime" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
+            {selectedStep.id === "provider" && lab.id === "d05-l3-model-runtime" ? <ModelRuntimeReality context={context}/> : null}
+            {context && ["runtime-identity", "attach-l2", "attach-l3"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
             {context && ["provider", "attach-l1", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 
             {guideOptions.length ? <div className={styles.guideSurface}>

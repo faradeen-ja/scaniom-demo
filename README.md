@@ -393,17 +393,32 @@ The SDK carries context into the same Scaniom Node/Gate. It does not create anot
 
 **Where you work:** GPU/model host, VM, Docker or Kubernetes.
 
+L3 is a deeper **explicit opt-in** runtime-identity scope. It does not silently broaden the default B1 `l1,l2,l4` workload scope. Scaniom Gate runs before inference; post-outcome evidence is emitted as `runtime_hook` into the same trajectory/proof authority.
+
 ```bash
+# Register the real inference target
+scaniom attach l3 \
+  --workload customer-agent \
+  --kind vllm \
+  --endpoint http://<runtime>:8000
+
+# Grant least-privilege L3 workload authority
+scaniom runtime identity bootstrap \
+  --workload customer-agent \
+  --attachments l3
+
+# Start the adapter beside the real runtime
 scaniom attach l3 \
   --workload customer-agent \
   --kind vllm \
   --endpoint http://<runtime>:8000 \
   --run
 
-scaniom runtime identity bootstrap \
-  --workload customer-agent \
-  --attachments l3
+# Send a real harmless inference through L3
+scaniom attach test l3 --workload customer-agent --model <model> -- "Say hello in one sentence"
 ```
+
+Supported R18 / 0.4.1 kinds are `vllm`, `nvidia_nim`, `triton` (HTTP V2 JSON) and `openai_compatible`. Runtime credential values stay at the protected runtime boundary; Control retains only endpoint metadata and an optional secret-reference name.
 
 ## L4 · Sidecar
 

@@ -217,3 +217,13 @@ test("repo-wide responsive foundation covers both Lab states and every public su
   assert.match(immuneCss, /@media\(max-width:420px\)/);
   assert.match(globalCss, /overflow-x:hidden/);
 });
+
+
+test("D05 Inspector renders live model-runtime inventory and explicit L3 authority", () => {
+  const source = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(source, /function ModelRuntimeReality/);
+  assert.match(source, /REAL MODEL RUNTIMES FROM SCANIOM CONTROL/);
+  assert.match(source, /Gate before inference/);
+  assert.match(source, /--attachments l3/);
+  assert.match(source, /lab\.id === "d05-l3-model-runtime"/);
+});

@@ -4,7 +4,7 @@ export type LabKind = "lab" | "system";
 export type LabStepStatus = "verified" | "ready" | "locked";
 export type LabCompletion =
   | "profile" | "identity" | "organization" | "environment" | "workload"
-  | "address" | "node" | "policy" | "runtimeIdentity" | "provider" | "attachment" | "behavior" | "proof" | "external";
+  | "address" | "node" | "policy" | "runtimeIdentity" | "runtimeTarget" | "provider" | "attachment" | "behavior" | "proof" | "external";
 export type LabStepGroup = "authority" | "fabric" | "runtime" | "evidence";
 
 export type LabGuideOption = {
@@ -343,7 +343,7 @@ function attachmentName(id: string): string {
   return ({ L1: "API Route", L2: "SDK", L3: "Model Runtime", L4: "Sidecar", L5: "Environment Gateway", MCP: "MCP Gateway", L6: "Provider Native" } as Record<string, string>)[id] || id;
 }
 
-function runtimeSteps(attachments: string[], providers: string[], options: { multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; includeTarget?: boolean } = {}): LabStep[] {
+function runtimeSteps(attachments: string[], providers: string[], options: { multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; runtimeTarget?: boolean; includeTarget?: boolean } = {}): LabStep[] {
   const steps: LabStep[] = [
     liveStep("address", { id: "address", label: "Scaniom Address", eyebrow: "WORKLOAD IDENTITY", group: "fabric", depth: 1, dependsOn: ["workload"], detail: "Issue the signed Scaniom Address that binds behavior and runtime authority to this workload.", why: "Evidence must remain attributable to a real workload before any runtime boundary is attached.", surface: "Scaniom Control / CLI", commands: ["scaniom address issue --workload {{workload}} --ttl 24", "scaniom runtime identity status --workload {{workload}}"] }),
     liveStep("node", { id: "node", label: options.multiNode ? "Node pool" : "Scaniom Node", eyebrow: "MACHINE AUTHORITY", group: "fabric", depth: 1, dependsOn: ["address"], detail: options.multiNode ? "Enroll multiple Nodes, start them in the real runtime environment, then bind the workload to a pool." : "Enroll and run the Scaniom Node beside the protected runtime.", why: "The Node owns machine-speed identity, trajectory, risk, policy and Gate decisions.", surface: options.multiNode ? "VM/Docker/Kubernetes/managed K8s" : "Local/VM/Docker/Kubernetes/private runtime", commands: options.multiNode ? ["scaniom fabric add nodes --env {{environment}} --prefix open-immune-node --count 3", "scaniom node list", "scaniom node health", "scaniom fabric"] : ["scaniom node enroll open-immune-node --env {{environment}} --background", "scaniom node health", "scaniom node doctor"] }),
@@ -351,19 +351,60 @@ function runtimeSteps(attachments: string[], providers: string[], options: { mul
   ];
 
   if (options.runtimeIdentity) {
-    steps.push(liveStep("runtimeIdentity", { id: "runtime-identity", label: "Runtime identity", eyebrow: "WORKLOAD AUTHORITY", group: "runtime", depth: 0, dependsOn: ["policy"], detail: "Create or reuse the workload's B1 runtime identity and preserve the shared L1/L2/L4 attachment scope. The SDK exchanges copy-once bootstrap material for renewable scn_ri_v1 authority through the Node.", why: "L2 actions need workload-scoped runtime authority without putting Control or provider credentials in the per-action path.", surface: "Scaniom Control / CLI / workload deployment secret", artifacts: ["active runtime identity", "L2 attachment scope", "copy-once bootstrap or native workload identity"], commands: ["scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom runtime identity status --workload {{workload}}"], notes: ["Do not narrow an existing B1 identity to L2 only. L1, L2 and L4 share the frozen managed runtime-identity scope.", "Open Immune never reads or stores bootstrap/runtime token values."] }));
+    const requested = attachments.map((value) => value.toLowerCase());
+    const sharedB1 = requested.length === 1 && ["l2", "l4"].includes(requested[0]);
+    const identityScope = sharedB1 ? "l1,l2,l4" : requested.join(",");
+    const identityLabel = sharedB1 ? "shared L1/L2/L4 attachment scope" : `${attachments.join(" + ")} explicit attachment scope`;
+    steps.push(liveStep("runtimeIdentity", {
+      id: "runtime-identity", label: "Runtime identity", eyebrow: "WORKLOAD AUTHORITY", group: "runtime", depth: 0, dependsOn: ["policy"],
+      detail: sharedB1
+        ? "Create or reuse the workload's B1 runtime identity and preserve the shared L1/L2/L4 attachment scope. The workload exchanges copy-once bootstrap material for renewable scn_ri_v1 authority through the Node."
+        : `Create or reuse workload runtime identity with explicit ${attachments.join(" + ")} scope. Deeper attachment scopes are opt-in and do not replace the frozen L1/L2/L4 default.`,
+      why: sharedB1
+        ? "L2/L4 actions need workload-scoped runtime authority without putting Control or provider credentials in the per-action path."
+        : `${attachments.join(" + ")} execution needs least-privilege workload authority before the adapter can call its dedicated Node guard/observe surface.`,
+      surface: "Scaniom Control / CLI / runtime deployment secret",
+      artifacts: ["active runtime identity", identityLabel, "copy-once bootstrap or native workload identity"],
+      commands: [`scaniom runtime identity bootstrap --workload {{workload}} --attachments ${identityScope}`, "scaniom runtime identity status --workload {{workload}}"],
+      notes: sharedB1
+        ? ["Do not narrow an existing B1 identity to one managed attachment. L1, L2 and L4 share the frozen managed runtime-identity scope.", "Open Immune never reads or stores bootstrap/runtime token values."]
+        : [`${attachments.join(" + ")} is an explicit least-privilege scope. It does not silently broaden the workload's default B1 attachment set.`, "Open Immune never reads or stores bootstrap/runtime token values."]
+    }));
   }
 
   const needsProvider = attachments.some((value) => ["L1", "L4"].includes(value)) || options.multiProvider || options.immunex;
   if (needsProvider) {
     steps.push(liveStep("provider", { id: "provider", label: options.multiProvider ? "Provider routes + BYOK" : "Provider route + BYOK", eyebrow: "NODE-LOCAL CREDENTIALS", group: "runtime", depth: 0, dependsOn: ["policy"], detail: options.multiProvider ? "Configure multiple real provider routes and Node-local credentials while preserving one Scaniom workload identity, policy, Gate and trajectory." : "Configure the provider route and provider credential on the Scaniom Node or enterprise secret store.", why: "Open Immune never asks for raw AI provider keys. Control stores route metadata and secret references; the Node or enterprise secret system owns the value.", surface: "Node host / Kubernetes Secret / enterprise secret store", artifacts: ["OpenAI / Anthropic / Gemini keys", "AWS credential chain for Bedrock", "CUSTOM_MODEL_TOKEN for custom routes"], commands: providerCommands(providers, Boolean(options.multiProvider)), notes: ["Enter provider keys through `scaniom secret configure ...` on the Node host or materialize them from the enterprise secret system.", "Do not paste raw provider keys into Open Immune or Scaniom Control.", "Multi-provider routes share one workload identity and can contribute to one correlated trajectory."], guideOptions: providerGuideOptions() }));
   } else if (options.includeTarget !== false) {
-    steps.push(externalStep({ id: "provider", label: "Runtime target", eyebrow: "UPSTREAM TARGET", group: "runtime", depth: 0, dependsOn: ["workload"], detail: "Provide the real model runtime, MCP server or provider-native target required by this lab.", why: "The lab exercises a real execution target; Open Immune never fabricates upstream success.", surface: "Target runtime environment", commands: ["scaniom attach architecture"] }));
+    const l3Target = attachments.length === 1 && attachments[0] === "L3";
+    const input = {
+      id: "provider", label: "Runtime target", eyebrow: "UPSTREAM TARGET", group: "runtime" as const, depth: 0 as const, dependsOn: ["policy"],
+      detail: l3Target
+        ? "Run a real vLLM, NVIDIA NIM, Triton HTTP V2 JSON or OpenAI-compatible inference endpoint and register that runtime against the selected workload."
+        : "Provide and register the real model runtime, MCP server or provider-native target required by this lab.",
+      why: l3Target
+        ? "L3 must point at a real inference target before the adapter can prove Gate-before-inference. Control persists endpoint metadata and an optional secret reference, never the credential value."
+        : "The lab exercises a real execution target; Open Immune never fabricates upstream success.",
+      surface: "Target runtime environment / Scaniom Control",
+      artifacts: l3Target ? ["active model runtime inventory", "runtime endpoint", "optional auth secret reference"] : undefined,
+      commands: l3Target
+        ? ["scaniom attach l3 --workload {{workload}} --kind <vllm|nvidia_nim|triton|openai_compatible> --endpoint <runtime-url> --model {{model}}", "scaniom attach status --workload {{workload}}"]
+        : ["scaniom attach architecture"]
+    };
+    steps.push(options.runtimeTarget ? liveStep("runtimeTarget", input) : externalStep(input));
   }
 
   for (const attachment of attachments) {
     const step = attachmentStep(attachment);
-    step.dependsOn = needsProvider && ["L1", "L4"].includes(attachment) ? ["provider"] : options.runtimeIdentity ? ["runtime-identity"] : ["policy"];
+    step.dependsOn = needsProvider && ["L1", "L4"].includes(attachment)
+      ? ["provider"]
+      : options.runtimeTarget && options.runtimeIdentity
+        ? ["provider", "runtime-identity"]
+        : options.runtimeTarget
+          ? ["provider"]
+          : options.runtimeIdentity
+            ? ["runtime-identity"]
+            : ["policy"];
     steps.push(step);
   }
 
@@ -375,7 +416,7 @@ function runtimeSteps(attachments: string[], providers: string[], options: { mul
   return steps;
 }
 
-function manifest(input: Omit<LabManifest, "steps" | "topology"> & { steps?: LabStep[]; topology?: LabManifest["topology"]; runtime?: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; includeTarget?: boolean } }): LabManifest {
+function manifest(input: Omit<LabManifest, "steps" | "topology"> & { steps?: LabStep[]; topology?: LabManifest["topology"]; runtime?: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; runtimeTarget?: boolean; includeTarget?: boolean } }): LabManifest {
   const { runtime, steps: providedSteps, topology: providedTopology, ...base } = input;
   const attachments = base.attachments;
   const steps = providedSteps || [...authoritySteps(), ...scopeSteps(), ...runtimeSteps(runtime?.attachments || attachments, base.providers, runtime)];
@@ -400,7 +441,7 @@ const labs: LabManifest[] = [
   manifest({ id: "d02-l1-full-cycle", code: "D02", kind: "lab", title: "L1 Full Cycle", subtitle: "Application API traffic → Scaniom Node → real AI provider.", summary: "Build the API-route boundary from public install and OIS Auth through scope, identity, Node, policy, BYOK provider route, application routing, real traffic and proof.", goal: "Complete one real provider-backed request through L1 and inspect Gate/trajectory/proof.", difficulty: "Foundation", attachments: ["L1"], platforms: ["IDE", "Local", "VM", "Docker", "Kubernetes"], providers: ["OpenAI"], stacks: ["Scaniom Node", "Application API client"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L1"] } }),
   manifest({ id: "d03-l2-agent-sdk", code: "D03", kind: "lab", title: "L2 Agent SDK", subtitle: "Guard real application/agent semantics with the released TypeScript and Python Scaniom SDKs.", summary: "Reuse the accepted OIS authority and protected scope, establish shared B1 workload runtime identity, execute harmless real semantic consequences through both public SDKs, then verify L2 evidence and signed proof from Scaniom.", goal: "Finish with TypeScript + Python L2 guard → consequence → observe cycles and Scaniom-authoritative SDK evidence/proof.", difficulty: "Intermediate", attachments: ["L2"], platforms: ["VS Code/IDE", "Node.js", "Python", "Docker", "Kubernetes"], providers: [], stacks: ["@scaniom/sdk@0.4.1", "scaniom==0.4.1", "B1 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L2"], runtimeIdentity: true, includeTarget: false } }),
   manifest({ id: "d04-l4-sidecar", code: "D04", kind: "lab", title: "L4 Sidecar", subtitle: "Protect an existing workload without rewriting every provider call.", summary: "Deploy the released Scaniom sidecar beside the real workload, preserve the shared B1 L1/L2/L4 runtime identity, route actual application traffic through the sidecar, and let live Scaniom sidecar evidence close the Lab automatically.", goal: "Finish with real L4 sidecar traffic, Gate/trajectory evidence and an L4/sidecar signed proof for the selected workload.", difficulty: "Intermediate", attachments: ["L4"], platforms: ["Docker", "Kubernetes", "VM", "Local development"], providers: ["OpenAI-compatible"], stacks: ["Scaniom Sidecar", "Existing app", "B1 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L4"], runtimeIdentity: true } }),
-  manifest({ id: "d05-l3-model-runtime", code: "D05", kind: "lab", title: "L3 Model Runtime", subtitle: "Gate vLLM, NVIDIA NIM, Triton or compatible inference before execution.", summary: "Place the released runtime adapter beside the real model runtime on GPU Linux, Docker or Kubernetes.", goal: "Run a real inference target through the L3 boundary.", difficulty: "Advanced", attachments: ["L3"], platforms: ["GPU Linux", "Docker", "Kubernetes"], providers: ["vLLM", "NIM", "Triton", "OpenAI-compatible runtime"], stacks: ["Model runtime", "L3 adapter"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-model-runtime", runtime: { attachments: ["L3"] } }),
+  manifest({ id: "d05-l3-model-runtime", code: "D05", kind: "lab", title: "L3 Model Runtime", subtitle: "Gate vLLM, NVIDIA NIM, Triton or compatible inference before execution.", summary: "Register the real inference runtime, opt the selected workload into L3 runtime identity, start the released runtime adapter beside the model server, then verify pre-inference Gate plus runtime_hook evidence and signed proof.", goal: "Finish with a real inference request that crosses L3 Gate before model execution and closes from selected-workload runtime_hook evidence.", difficulty: "Advanced", attachments: ["L3"], platforms: ["GPU Linux", "Docker", "Kubernetes"], providers: ["vLLM", "NVIDIA NIM", "NVIDIA Triton", "OpenAI-compatible runtime"], stacks: ["Model runtime", "L3 adapter", "explicit L3 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-model-runtime", runtime: { attachments: ["L3"], runtimeIdentity: true, runtimeTarget: true } }),
   manifest({ id: "d06-l5-environment-gateway", code: "D06", kind: "lab", title: "L5 Environment Gateway", subtitle: "Protect explicit environment ingress while preserving per-workload identity.", summary: "Deploy the Environment Gateway at a cluster/VPC/private boundary and require workload attribution on every request.", goal: "Exercise real multi-workload environment ingress through L5.", difficulty: "Advanced", attachments: ["L5"], platforms: ["Kubernetes", "VM", "VPC/private network"], providers: ["Any configured provider"], stacks: ["Environment Gateway"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L5"] } }),
   manifest({ id: "d07-mcp-gateway", code: "D07", kind: "lab", title: "MCP Gateway", subtitle: "Gate Streamable HTTP MCP tool calls before server/tool consequence.", summary: "Place the Scaniom MCP Gateway between a real MCP client/agent and MCP server while preserving server, session and tool lineage.", goal: "Run a real tools/call through the MCP boundary and inspect proof.", difficulty: "Advanced", attachments: ["MCP"], platforms: ["Node.js", "Docker", "Kubernetes"], providers: ["MCP server"], stacks: ["MCP", "Tools"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["MCP"] } }),
   manifest({ id: "d08-l6-provider-native", code: "D08", kind: "lab", title: "L6 Provider Native", subtitle: "Guard immediately before a provider/runtime-native consequence.", summary: "Integrate the executable L6 bridge/framework into a real provider/runtime adapter using metadata-minimized guard-before/observe-after semantics.", goal: "Exercise a provider-native hook and verify its decision trail.", difficulty: "Advanced", attachments: ["L6"], platforms: ["Provider/runtime adapter", "Custom framework"], providers: ["Custom adapter"], stacks: ["L6 bridge"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L6"] } }),
@@ -468,22 +509,27 @@ function singleAttachmentEvidenceSource(lab: LabManifest): string | null {
   return ATTACHMENT_EVIDENCE_SOURCE[String(lab.attachments[0] || "").toLowerCase()] || null;
 }
 
-function managedRuntimeIdentityVerified(context: OpenIiContextResponse, workloadId: string | null | undefined, requiredAttachment: "l2" | "l4"): boolean {
+function runtimeIdentityVerified(context: OpenIiContextResponse, workloadId: string | null | undefined, requiredAttachment: "l2" | "l3" | "l4"): boolean {
   const identity = context.runtimeIdentity?.identity;
   const attachments = (identity?.attachments || []).map((item) => String(item).toLowerCase());
-  return Boolean(identity
-    && identity.workloadId === workloadId
-    && String(identity.status || "").toLowerCase() === "active"
-    && attachments.includes(requiredAttachment)
-    && attachments.includes("l1")
-    && attachments.includes("l2")
-    && attachments.includes("l4"));
+  if (!identity || identity.workloadId !== workloadId || String(identity.status || "").toLowerCase() !== "active" || !attachments.includes(requiredAttachment)) return false;
+  if (requiredAttachment === "l2" || requiredAttachment === "l4") return ["l1", "l2", "l4"].every((attachment) => attachments.includes(attachment));
+  return true;
 }
 
-function requiredManagedAttachment(lab: LabManifest): "l2" | "l4" | null {
+function requiredRuntimeIdentityAttachment(lab: LabManifest): "l2" | "l3" | "l4" | null {
   if (lab.id === "d03-l2-agent-sdk") return "l2";
   if (lab.id === "d04-l4-sidecar") return "l4";
+  if (lab.id === "d05-l3-model-runtime") return "l3";
   return null;
+}
+
+function l3RuntimeTargetVerified(context: OpenIiContextResponse, workloadId: string | null | undefined): boolean {
+  if (!workloadId) return false;
+  return Boolean((context.modelRuntimes || []).some((runtime) => runtime.workloadId === workloadId
+    && runtime.status === "active"
+    && Boolean(runtime.endpoint)
+    && ["vllm", "nvidia_nim", "triton", "openai_compatible"].includes(runtime.kind)));
 }
 
 export function completionVerified(step: LabStep, context: OpenIiContextResponse, lab: LabManifest): boolean {
@@ -503,9 +549,10 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
     }
     case "policy": return Boolean(environmentId && (context.policies || []).some((item) => item.environment_id === environmentId));
     case "runtimeIdentity": {
-      const required = requiredManagedAttachment(lab);
-      return required ? managedRuntimeIdentityVerified(context, workloadId, required) : false;
+      const required = requiredRuntimeIdentityAttachment(lab);
+      return required ? runtimeIdentityVerified(context, workloadId, required) : false;
     }
+    case "runtimeTarget": return l3RuntimeTargetVerified(context, workloadId);
     case "provider": {
       const routes = (context.connections || []).filter((item) => item.workload_id === workloadId && item.status !== "paused");
       const readyRoutes = Number(context.attachments?.counts?.readyRoutes || 0);
@@ -516,13 +563,15 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
       return true;
     }
     case "attachment": {
-      const required = requiredManagedAttachment(lab);
-      if (required && !managedRuntimeIdentityVerified(context, workloadId, required)) return false;
+      const required = requiredRuntimeIdentityAttachment(lab);
+      if (required && !runtimeIdentityVerified(context, workloadId, required)) return false;
+      if (lab.id === "d05-l3-model-runtime" && !l3RuntimeTargetVerified(context, workloadId)) return false;
       return attachmentVerified(step, context);
     }
     case "behavior": {
-      const required = requiredManagedAttachment(lab);
-      if (required && !managedRuntimeIdentityVerified(context, workloadId, required)) return false;
+      const required = requiredRuntimeIdentityAttachment(lab);
+      if (required && !runtimeIdentityVerified(context, workloadId, required)) return false;
+      if (lab.id === "d05-l3-model-runtime" && !l3RuntimeTargetVerified(context, workloadId)) return false;
       const requiredSource = singleAttachmentEvidenceSource(lab);
       if (!requiredSource) return Boolean(context.attachments?.levels?.some((item) => Number(item.evidence?.total || 0) > 0));
       return Boolean(context.attachments?.levels?.some((item) => {
@@ -532,8 +581,9 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
     }
     case "proof": {
       if (!workload) return false;
-      const required = requiredManagedAttachment(lab);
-      if (required && !managedRuntimeIdentityVerified(context, workloadId, required)) return false;
+      const required = requiredRuntimeIdentityAttachment(lab);
+      if (required && !runtimeIdentityVerified(context, workloadId, required)) return false;
+      if (lab.id === "d05-l3-model-runtime" && !l3RuntimeTargetVerified(context, workloadId)) return false;
       const workloadName = String(workload.name || workload.slug || workload.id || "").trim().toLowerCase();
       const requiredSource = singleAttachmentEvidenceSource(lab);
       const directProof = Boolean(context.proof?.evidence?.some((item) =>
@@ -595,6 +645,7 @@ export function labResolvedValues(context: OpenIiContextResponse, lab: LabManife
   const environment = context.environments.find((item) => item.id === environmentId);
   const workload = context.workloads.find((item) => item.id === workloadId);
   const connection = selectedLabConnection(context, lab);
+  const modelRuntime = lab.id === "d05-l3-model-runtime" ? (context.modelRuntimes || []).find((item) => item.workloadId === workloadId && item.status === "active") || null : null;
   const node = selectedLabNode(context);
   const settings = connection?.settings || {};
   const region = typeof settings.awsRegion === "string" && settings.awsRegion ? settings.awsRegion : "<aws-region>";
@@ -602,9 +653,9 @@ export function labResolvedValues(context: OpenIiContextResponse, lab: LabManife
     environment: String(environment?.slug || environment?.name || environment?.id || lab.suggestedEnvironment),
     workload: String(workload?.slug || workload?.name || workload?.id || lab.suggestedWorkload),
     node: String(node?.slug || node?.name || node?.id || "<node>"),
-    provider: String(connection?.provider || (lab.providers.length === 1 ? lab.providers[0].toLowerCase().split(/[ /]/)[0] : "<provider>")),
-    model: String(connection?.model_hint || workload?.model || "<model>"),
-    connection: String(connection?.name || connection?.id || "<connection>"),
+    provider: String(modelRuntime?.kind || connection?.provider || (lab.providers.length === 1 ? lab.providers[0].toLowerCase().split(/[ /]/)[0] : "<provider>")),
+    model: String(modelRuntime?.modelHint || connection?.model_hint || workload?.model || "<model>"),
+    connection: String(modelRuntime?.name || connection?.name || connection?.id || "<connection>"),
     region,
     nodeUrl: "<private Scaniom Node service URL from your deployment>",
   };

@@ -20,3 +20,5 @@ Before a Lab can create or mutate environment, workload, Node, policy, attachmen
 5. `scaniom auth status` and `scaniom whoami` succeed.
 
 Web and CLI credentials remain separate. Their parity is the shared Scaniom Control state, not credential sharing.
+
+Deeper runtime boundaries are least-privilege opt-ins. In particular, D05/L3 must verify a real active model-runtime inventory from Scaniom Control, explicit `l3` workload runtime-identity scope, `runtime_hook` evidence, and an attachment-specific signed proof. It must not infer completion from a configured diagram or from unrelated L1/L2/L4 evidence.
