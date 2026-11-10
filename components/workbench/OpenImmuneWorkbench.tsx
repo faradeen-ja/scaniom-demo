@@ -223,6 +223,7 @@ function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextRespon
   const attachments = (identity?.attachments || []).map((item) => String(item).toUpperCase()).join(" + ") || "—";
   const isL3 = lab.id === "d05-l3-model-runtime";
   const isL5 = lab.id === "d06-l5-environment-gateway";
+  const isMcp = lab.id === "d07-mcp-gateway";
   const rows = identity ? [
     ["STATE", String(identity.status || "unknown").toUpperCase()],
     ["IDENTITY", identity.identityId || "—"],
@@ -237,7 +238,9 @@ function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextRespon
       ? <p><b>L3 is an explicit least-privilege runtime-identity scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l3</code>. The L3 adapter exchanges that bootstrap for renewable <code>scn_ri_v1</code> authority before using <code>/v1/runtime/guard</code> and <code>/v1/runtime/observe</code>.</p>
       : isL5
         ? <p><b>L5 is an explicit least-privilege environment-gateway scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l5</code>. Every request through the shared environment ingress must still carry the originating workload authority; Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>
-        : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
+        : isMcp
+          ? <p><b>MCP is an explicit least-privilege tool-boundary scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments mcp</code>. The MCP Gateway carries that workload authority into Gate before <code>tools/call</code> reaches the upstream server, then records post-observe lineage without exposing the token to Open Immune.</p>
+          : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
     </div>
   </div>;
 }
@@ -695,7 +698,7 @@ export function OpenImmuneWorkbench() {
             {selectedStep.id === "provider" && lab.id !== "d05-l3-model-runtime" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
             {selectedStep.id === "provider" && lab.id === "d05-l3-model-runtime" ? <ModelRuntimeReality context={context}/> : null}
             {context && lab.id === "d06-l5-environment-gateway" && selectedStep.id === "attach-l5" ? <EnvironmentGatewayReality context={context}/> : null}
-            {context && ["runtime-identity", "attach-l2", "attach-l3", "attach-l5"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
+            {context && ["runtime-identity", "attach-l2", "attach-l3", "attach-l5", "attach-mcp"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
             {context && ["provider", "attach-l1", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 
             {guideOptions.length ? <div className={styles.guideSurface}>

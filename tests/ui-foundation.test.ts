@@ -234,5 +234,5 @@ test("D06 Inspector renders live L5 gateway state and explicit L5 authority", ()
   assert.match(source, /REAL L5 GATEWAY STATE FROM SCANIOM CONTROL/);
   assert.match(source, /L5 is shared environment ingress, not shared identity/);
   assert.match(source, /--attachments l5/);
-  assert.match(source, /\["runtime-identity", "attach-l2", "attach-l3", "attach-l5"\]/);
+  assert.match(source, /\["runtime-identity", "attach-l2", "attach-l3", "attach-l5", "attach-mcp"\]/);
 });

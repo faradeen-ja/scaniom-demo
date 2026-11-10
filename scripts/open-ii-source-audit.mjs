@@ -84,7 +84,10 @@ need("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH R
 reject("components/workbench/OpenImmuneWorkbench.tsx",["treeVisible","inspectorVisible","treePreference","inspectorPreference","toggleTreePane","toggleInspectorPane","paneToggle","restorePane","restoreTree","restoreInspector","Hide Fabric Tree","Show Fabric Tree","Hide Inspector","Show Inspector","useSyncExternalStore","compactWorkbench"]);
 need("components/OisAuthConsole.tsx",["NETWORK OFFLINE","OFFLINE · SCANIOM CONTROL NOT CONTACTED"]);
 need("components/ScaniomConnection.tsx",["NETWORK OFFLINE","navigator.onLine"]);
-need("lib/open-ii/labs.ts",["d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","requiredRuntimeIdentityAttachment","runtimeIdentityVerified","--attachments l1,l2,l4","--attachments l3","--attachments l5","runtimeTarget"]);
+need("lib/open-ii/labs.ts",["d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","d07-mcp-gateway","requiredRuntimeIdentityAttachment","runtimeIdentityVerified","--attachments l1,l2,l4","--attachments l3","--attachments l5","--attachments mcp","runtimeTarget"]);
+need("demos/d07-mcp-gateway/run.sh",["/v1/runtime/identity/exchange","--attachments mcp","--node-url \"$NODE_URL\"","method:\"tools/call\"","mcp_gateway","forwarded","observed","proof correlated verify","D07 MCP GATEWAY REAL EXECUTION PASS"]);
+need("demos/d07-mcp-gateway/reference-server.mjs",["open_immune_record","server/discover","tools/list","tools/call","2026-07-28","contentStored: false","fs.appendFileSync"]);
+need("demos/d07-mcp-gateway/README.md",["real Streamable HTTP MCP","Gate executes **before** `tools/call`","--attachments mcp","mcp_gateway","pre + post"]);
 reject("README.md",["Executable public run scripts remain under `demos/`"]);
 
 need("app/layout.tsx",["Metadata, Viewport",'width: "device-width"',"initialScale: 1",'viewportFit: "cover"']);
@@ -119,6 +122,7 @@ console.log("✓ D01 local execution receipt is credential-free and emitted only
 console.log("✓ D02 signed-proof completion comes from existing Scaniom operator proof authority");
 console.log("✓ D03 executes released TypeScript + Python SDKs with shared B1 runtime identity, L2 evidence and attachment-specific signed proof");
 console.log("✓ D05 L3 verifies live model-runtime inventory, explicit L3 identity, runtime_hook evidence and attachment-specific signed proof");
+console.log("✓ D07 MCP verifies explicit MCP identity, Gate-before-tools/call, real upstream consequence, mcp_gateway pre/post trajectory and signed proof");
 console.log("✓ Web↔CLI parity uses a local one-time browser challenge; no browser token or CLI credential is shared");
 console.log("✓ all real Labs use the installed source-independent R18/0.4.2 scaniom command from PATH");
 console.log("✓ Node/policy/provider/attachment/behavior state verifies only from live Scaniom Control evidence");
