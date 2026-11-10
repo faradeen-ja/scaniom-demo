@@ -76,7 +76,7 @@ test("D01 becomes verified only after the real public install receipt exists", (
         labId: "d01-public-install",
         status: "pass",
         release: "R18",
-        scaniomVersion: "0.4.1",
+        scaniomVersion: "0.4.2",
         verifiedAt: "2026-11-08T00:00:00.000Z",
         checks: { publicRelease: true, standaloneCli: true, npmSdk: true, pypiSdk: true },
       },
@@ -175,4 +175,32 @@ test("D05 verifies only from a real model runtime, explicit L3 identity, runtime
 
   const sidecarProof = buildLabRuntime(lab, { ...live, proof: { evidence: [{ ...live.proof!.evidence![0], attachment_source: "sidecar", attachment_label: "L4" }] } });
   assert.equal(sidecarProof.runtimeSteps.find((step) => step.id === "proof")?.status, "ready");
+});
+
+test("D06 verifies only from explicit L5 identity, gateway evidence and selected-workload L5 proof", () => {
+  const lab = labById("d06-l5-environment-gateway")!;
+  const live = context({
+    workspace: { version: 1, profileName: "cloud", organizationId: "org1", environmentId: "env1", workloadId: "work1" },
+    workloads: [{ id: "work1", name: "Gateway Agent", slug: "gateway-agent", kind: "agent", status: "active", environment_id: "env1", active_address: "scn://example/gateway-agent" }],
+    nodes: [{ id: "node1", name: "prod-ai-01", slug: "prod-ai-01", environment_id: "env1", operational_state: "online", status: "active" }],
+    policies: [{ environment_id: "env1", environment_name: "Production", mode: "enforce", version: 5 }],
+    runtimeIdentity: { ok: true, identity: { identityId: "ri-l5", workloadId: "work1", workloadName: "Gateway Agent", environmentId: "env1", status: "active", generation: 1, attachments: ["l5"], lease: { leaseId: "lease-l5", status: "active" } } },
+    attachments: { levels: [{ id: "l5", level: "L5", configured: true, ready: true, evidence: { total: 2 } }] },
+    proof: { evidence: [{ id: "receipt-l5", kind: "receipt", occurred_at: "2026-11-09T00:00:00.000Z", environment_id: "env1", environment_name: "Production", workload_name: "Gateway Agent", node_name: "prod-ai-01", provider: "openai", attachment_source: "gateway", attachment_label: "L5", policy_version: 5, policy_digest: "sha256:l5", machine_action: "pass", count: 1, behavior_event_id: "beh-l5", merkle_root: null, key_fingerprint: "key-l5", verification: "valid" }] },
+  });
+
+  const runtime = buildLabRuntime(lab, live);
+  for (const id of ["runtime-identity", "attach-l5", "behavior", "proof"]) {
+    assert.equal(runtime.runtimeSteps.find((step) => step.id === id)?.status, "verified", id);
+  }
+
+  const noL5Identity = buildLabRuntime(lab, { ...live, runtimeIdentity: { identity: { ...live.runtimeIdentity!.identity!, attachments: ["l1", "l2", "l4"] } } });
+  assert.equal(noL5Identity.runtimeSteps.find((step) => step.id === "runtime-identity")?.status, "ready");
+  assert.equal(noL5Identity.runtimeSteps.find((step) => step.id === "attach-l5")?.status, "locked");
+
+  const noGatewayEvidence = buildLabRuntime(lab, { ...live, attachments: { levels: [{ id: "l5", level: "L5", configured: true, ready: true, evidence: { total: 0 } }] } });
+  assert.notEqual(noGatewayEvidence.runtimeSteps.find((step) => step.id === "behavior")?.status, "verified");
+
+  const wrongAttachmentProof = buildLabRuntime(lab, { ...live, proof: { evidence: [{ ...live.proof!.evidence![0], attachment_source: "sidecar", attachment_label: "L4" }] } });
+  assert.equal(wrongAttachmentProof.runtimeSteps.find((step) => step.id === "proof")?.status, "ready");
 });

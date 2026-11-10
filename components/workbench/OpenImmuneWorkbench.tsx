@@ -166,6 +166,40 @@ function ModelRuntimeReality({ context }: { context: OpenIiContextResponse | nul
   </section>;
 }
 
+function EnvironmentGatewayReality({ context }: { context: OpenIiContextResponse }) {
+  const environmentId = context.workspace?.environmentId;
+  const workloadId = context.workspace?.workloadId;
+  const environment = context.environments.find((item) => item.id === environmentId);
+  const workload = context.workloads.find((item) => item.id === workloadId);
+  const level = context.attachments?.levels?.find((item) => String(item.id || item.level || "").toLowerCase() === "l5") || null;
+  const evidence = Number(level?.evidence?.total || 0);
+  const configured = level?.configured === true;
+  const ready = level?.ready === true;
+  return <section className={styles.providerInspectorBlock} aria-label="L5 environment gateway authority">
+    <div className={styles.providerAuthorityStack}>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="kubernetes" size={18}/></span>
+        <div><small>ENVIRONMENT INGRESS</small><b>{String(environment?.name || environment?.slug || environmentId || "Select environment")}</b></div>
+      </div>
+      <div className={styles.providerAuthorityConnector} aria-hidden="true"><span/></div>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="shield" size={18}/></span>
+        <div><small>WORKLOAD ATTRIBUTION</small><b>{String(workload?.name || workload?.slug || workloadId || "Select workload")}</b></div>
+      </div>
+    </div>
+    <div className={styles.providerRoutesPanel}>
+      <div className={styles.providerRoutesTitle}>REAL L5 GATEWAY STATE FROM SCANIOM CONTROL</div>
+      <div className={styles.providerRouteRows}>
+        <div className={styles.providerRouteRow}>
+          <span className={styles.providerRouteIcon}><StackIcon kind="kubernetes" size={17}/></span>
+          <div><small>L5 · {ready ? "READY" : configured ? "CONFIGURED" : "NOT CONFIGURED"}</small><b>Environment Gateway</b><em>{evidence} selected-workload gateway evidence object{evidence === 1 ? "" : "s"}</em></div>
+        </div>
+      </div>
+      <p className={styles.providerRoutesNote}>L5 is shared environment ingress, not shared identity. D06 closes only when the selected workload carries explicit L5 runtime authority and Scaniom reports gateway-sourced evidence plus valid signed proof for that workload.</p>
+    </div>
+  </section>;
+}
+
 function ResolvedRuntimeValues({ context, lab }: { context: OpenIiContextResponse; lab: LabManifest }) {
   const values = labResolvedValues(context, lab);
   const rows = [
@@ -188,6 +222,7 @@ function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextRespon
   const identity = context.runtimeIdentity?.identity || null;
   const attachments = (identity?.attachments || []).map((item) => String(item).toUpperCase()).join(" + ") || "—";
   const isL3 = lab.id === "d05-l3-model-runtime";
+  const isL5 = lab.id === "d06-l5-environment-gateway";
   const rows = identity ? [
     ["STATE", String(identity.status || "unknown").toUpperCase()],
     ["IDENTITY", identity.identityId || "—"],
@@ -200,7 +235,9 @@ function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextRespon
     <div className={styles.resolvedGrid}>{rows.map(([label, value]) => <div key={label}><span>{label}</span><code>{value}</code></div>)}</div>
     <div className={styles.secretBoundaryNote}><StackIcon kind="scaniom" size={18}/>{isL3
       ? <p><b>L3 is an explicit least-privilege runtime-identity scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l3</code>. The L3 adapter exchanges that bootstrap for renewable <code>scn_ri_v1</code> authority before using <code>/v1/runtime/guard</code> and <code>/v1/runtime/observe</code>.</p>
-      : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
+      : isL5
+        ? <p><b>L5 is an explicit least-privilege environment-gateway scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l5</code>. Every request through the shared environment ingress must still carry the originating workload authority; Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>
+        : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
     </div>
   </div>;
 }
@@ -657,7 +694,8 @@ export function OpenImmuneWorkbench() {
             {selectedStep.notes?.length ? <div className={styles.stepNotes}><small>BOUNDARY NOTES</small>{selectedStep.notes.map((note) => <p key={note}>{note}</p>)}</div> : null}
             {selectedStep.id === "provider" && lab.id !== "d05-l3-model-runtime" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
             {selectedStep.id === "provider" && lab.id === "d05-l3-model-runtime" ? <ModelRuntimeReality context={context}/> : null}
-            {context && ["runtime-identity", "attach-l2", "attach-l3"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
+            {context && lab.id === "d06-l5-environment-gateway" && selectedStep.id === "attach-l5" ? <EnvironmentGatewayReality context={context}/> : null}
+            {context && ["runtime-identity", "attach-l2", "attach-l3", "attach-l5"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
             {context && ["provider", "attach-l1", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 
             {guideOptions.length ? <div className={styles.guideSurface}>

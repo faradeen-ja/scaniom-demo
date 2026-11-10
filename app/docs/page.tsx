@@ -35,11 +35,11 @@ export default function DocsPage() {
     <nav className="docs-toc" aria-label="Start A-Z sections"><a href="#install">01 Release</a><a href="#auth">02 OIS Auth</a><a href="#scope">03 Scope</a><a href="#node">04 Node + policy</a><a href="#providers">05 BYOK</a><a href="#attachments">06 Boundaries</a><a href="#deploy">07 Placement</a><a href="#proof">08 Evidence</a></nav>
 
     <section id="install" className="docs-section docs-visual-section"><span>01 · PUBLIC RELEASE</span><h2>Release status is a prerequisite fact, not a Lab step.</h2><p>The live release badge above independently reports the public Scaniom release. Labs do not block on a fake “verify release” step and never show repository maintenance scripts as CLI commands.</p>
-      <Flow items={[{ icon: "terminal", label: "Installed CLI", detail: "user terminal" }, { icon: "scaniom", label: "Scaniom 0.4.1", detail: "released public runtime" }, { icon: "cloud", label: "Control", detail: "control.scaniom.com" }]}/>
+      <Flow items={[{ icon: "terminal", label: "Installed CLI", detail: "user terminal" }, { icon: "scaniom", label: "Scaniom 0.4.2", detail: "released public runtime" }, { icon: "cloud", label: "Control", detail: "control.scaniom.com" }]}/>
       <Code>{`scaniom version
 scaniom artifacts supply-chain
 scaniom profile test cloud`}</Code>
-      <div className="docs-note"><b>L2 package installs only when the Lab uses L2</b><code>npm install @scaniom/sdk@0.4.1</code><code>python3 -m pip install scaniom==0.4.1</code></div>
+      <div className="docs-note"><b>L2 package installs only when the Lab uses L2</b><code>npm install @scaniom/sdk@0.4.2</code><code>python3 -m pip install scaniom==0.4.2</code></div>
     </section>
 
     <section id="auth" className="docs-section docs-visual-section"><span>02 · OIS AUTH</span><h2>Authorize Open Immune and the CLI against the same Scaniom Control.</h2><p>Open Immune never receives the Scaniom password. Browser approval produces the operator authority; the CLI and web surface resolve the same organization.</p>

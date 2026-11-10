@@ -56,8 +56,8 @@ test("L1 is a complete API-route runbook and never requires the SDK", () => {
 test("L2 offers TypeScript, Python, Docker and Kubernetes placements", () => {
   const step = labById("d03-l2-agent-sdk")!.steps.find((item) => item.id === "attach-l2")!;
   assert.deepEqual(step.guideOptions?.map((option) => option.id), ["typescript", "python", "container", "kubernetes"]);
-  assert.ok(step.guideOptions?.find((option) => option.id === "typescript")?.install?.includes("npm install @scaniom/sdk@0.4.1"));
-  assert.ok(step.guideOptions?.find((option) => option.id === "python")?.install?.includes("python3 -m pip install scaniom==0.4.1"));
+  assert.ok(step.guideOptions?.find((option) => option.id === "typescript")?.install?.includes("npm install @scaniom/sdk@0.4.2"));
+  assert.ok(step.guideOptions?.find((option) => option.id === "python")?.install?.includes("python3 -m pip install scaniom==0.4.2"));
   const serialized = JSON.stringify(step);
   assert.match(serialized, /runtimeBootstrapToken|runtime_bootstrap_token/);
   assert.match(serialized, /--attachments l1,l2,l4/);
@@ -121,7 +121,7 @@ test("Lab commands resolve safe Control-observable placeholders but keep deploym
 });
 
 
-test("every surfaced Scaniom command matches the released R18/0.4.1 CLI contract", () => {
+test("every surfaced Scaniom command matches the released R18/0.4.2 CLI contract", () => {
   for (const lab of LAB_CATALOG) for (const step of lab.steps) {
     for (const command of step.commands || []) if (command.includes("scaniom ")) assert.equal(isReleasedScaniomCliCommand(command), true, `${lab.id}:${step.id}: ${command}`);
     for (const option of step.guideOptions || []) for (const command of option.commands) if (command.includes("scaniom ")) assert.equal(isReleasedScaniomCliCommand(command), true, `${lab.id}:${step.id}:${option.id}: ${command}`);
@@ -192,4 +192,20 @@ test("D05 is a Workbench-first L3 flow with live runtime inventory and explicit 
   for (const kind of ["vllm", "nvidia_nim", "triton", "openai_compatible"]) assert.match(serialized, new RegExp(kind));
   assert.match(fs.readFileSync("demos/d05-l3-model-runtime/README.md", "utf8"), /Normal users do not run/);
   assert.match(fs.readFileSync("demos/d05-l3-model-runtime/README.md", "utf8"), /runtime_hook/);
+});
+
+test("D06 is a Workbench-first L5 flow with explicit workload attribution and L5 runtime identity", () => {
+  const lab = labById("d06-l5-environment-gateway")!;
+  const runtimeIdentity = lab.steps.find((step) => step.id === "runtime-identity")!;
+  const l5 = lab.steps.find((step) => step.id === "attach-l5")!;
+  assert.ok(runtimeIdentity);
+  assert.match(JSON.stringify(runtimeIdentity), /--attachments l5/);
+  assert.match(JSON.stringify(l5), /environment gateway|Environment Gateway/i);
+  assert.match(JSON.stringify(l5), /explicit workload identity/);
+  assert.match(JSON.stringify(l5), /attach test l5/);
+  assert.deepEqual(l5.guideOptions?.map((option) => option.id), ["cluster", "vpc", "private"]);
+  const readme = fs.readFileSync("demos/d06-l5-environment-gateway/README.md", "utf8");
+  assert.match(readme, /Workbench-first/);
+  assert.match(readme, /attachment_source=gateway/);
+  assert.match(readme, /explicit least-privilege `l5` runtime-identity scope/);
 });

@@ -4,7 +4,7 @@
 
 Open Immune Intelligence (OII) is not a simulation of Scaniom and is not a second security product. It is the public engineering experience around released Scaniom artifacts. You choose a Lab or system, connect a real Scaniom account, build the required runtime boundaries in the real place they belong, run real traffic, and inspect the resulting Gate decisions, trajectory and proof.
 
-> **Current public Scaniom release:** R18 / 0.4.1 · `faradeen-ja/scaniom-releases` · public Control `https://control.scaniom.com`
+> **Current public Scaniom release:** R18 / 0.4.2 · `faradeen-ja/scaniom-releases` · public Control `https://control.scaniom.com`
 
 ## What is real
 
@@ -43,7 +43,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. The web release badge reads the latest public `faradeen-ja/scaniom-releases` release and falls back to the accepted R18 / 0.4.1 baseline if GitHub is unavailable. **Release status is informational/readiness metadata; it is not a blocking Lab step.**
+Open `http://localhost:3000`. The web release badge reads the latest public `faradeen-ja/scaniom-releases` release and falls back to the accepted R18 / 0.4.2 baseline if GitHub is unavailable. **Release status is informational/readiness metadata; it is not a blocking Lab step.**
 
 The public release includes standalone CLI/runtime archives, SHA256SUMS, Sigstore evidence, publication receipt, provenance and SBOM assets.
 
@@ -62,9 +62,9 @@ If the CLI is not installed yet, use the current public release link from the Op
 The TypeScript/Python SDKs are **L2 application dependencies**, not the CLI and not L1 prerequisites. Install only the language used by the real L2 workload:
 
 ```bash
-npm install @scaniom/sdk@0.4.1
+npm install @scaniom/sdk@0.4.2
 # OR
-python3 -m pip install scaniom==0.4.1
+python3 -m pip install scaniom==0.4.2
 ```
 
 ## C. OIS Auth — Open Immune ↔ Scaniom authorization
@@ -370,7 +370,7 @@ scaniom configure bootstrap customer-agent
 TypeScript:
 
 ```bash
-npm install @scaniom/sdk@0.4.1
+npm install @scaniom/sdk@0.4.2
 scaniom attach l2 \
   --workload customer-agent \
   --lang typescript
@@ -379,7 +379,7 @@ scaniom attach l2 \
 Python:
 
 ```bash
-python3 -m pip install scaniom==0.4.1
+python3 -m pip install scaniom==0.4.2
 scaniom attach l2 \
   --workload customer-agent \
   --lang python
@@ -418,7 +418,7 @@ scaniom attach l3 \
 scaniom attach test l3 --workload customer-agent --model <model> -- "Say hello in one sentence"
 ```
 
-Supported R18 / 0.4.1 kinds are `vllm`, `nvidia_nim`, `triton` (HTTP V2 JSON) and `openai_compatible`. Runtime credential values stay at the protected runtime boundary; Control retains only endpoint metadata and an optional secret-reference name.
+Supported R18 / 0.4.2 kinds are `vllm`, `nvidia_nim`, `triton` (HTTP V2 JSON) and `openai_compatible`. Runtime credential values stay at the protected runtime boundary; Control retains only endpoint metadata and an optional secret-reference name.
 
 ## L4 · Sidecar
 

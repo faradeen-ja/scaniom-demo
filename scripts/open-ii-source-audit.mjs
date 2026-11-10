@@ -16,7 +16,7 @@ need("lib/open-ii/network-policy.ts",["BlockList","169.254.0.0","fc00::","remote
 need("app/api/auth/scaniom/start/route.ts",["/api/v1/cli/device/start","verifyScaniomControl(profile)","requestClientIp(request)"]);
 need("app/api/auth/scaniom/poll/route.ts",["/api/v1/cli/device/token","scn_cli_","/api/v1/operator/whoami"]);
 need("app/api/scaniom/context/route.ts",["/api/v1/operator/nodes","/api/v1/operator/connections","/api/v1/operator/policy","/api/v1/operator/attachments?workload=","/api/v1/operator/proof?window=24h","/api/v1/operator/correlated-proofs","/api/v1/operator/runtime-identities?workloadId=","/api/v1/operator/model-runtimes?workload=","readLocalExecutionState","nodes,","connections,","policies,","attachments,","runtimeIdentity,","modelRuntimes:","proof,","correlatedProofs:","execution,"]);
-need("lib/open-ii/local-execution.ts",["d01-public-install.json","status === \"pass\"","release === \"R18\"","scaniomVersion === \"0.4.1\""]);
+need("lib/open-ii/local-execution.ts",["d01-public-install.json","status === \"pass\"","release === \"R18\"","scaniomVersion === \"0.4.2\""]);
 need("scripts/lib/common.sh",['SCANIOM_PROFILE="${SCANIOM_PROFILE:-cloud}"','SCANIOM_CONTROL_URL="${SCANIOM_CONTROL_URL:-https://control.scaniom.com}"']);
 reject("scripts/lib/common.sh",['SCANIOM_CONTROL_URL="${SCANIOM_CONTROL_URL:-https://scaniom.com}"']);
 reject("docs/authentication.md",["https://scaniom.com/signup","https://scaniom.com/login"]);
@@ -28,22 +28,22 @@ need("components/OisAuthConsole.tsx",["OIS AUTH · OPEN IMMUNE ↔ SCANIOM","Con
 need("app/page.tsx",["home-immersive","Build real AI immune fabrics","HomeAuthorityTerminal","Open Labs","OIS Auth","Start A–Z"]);
 need("components/HomeAuthorityTerminal.tsx",["OIS AUTH","PUBLIC RELEASE","/api/scaniom/public-release","ois://"]);
 need("components/ImmunityField.tsx",["ScaniomMark","AI agent","Robot fleet","Autonomous lanes","AI application","Inference factory","7600"]);
-need("lib/open-ii/public-release.ts",['version: "0.4.1"','release: "R18"','repository: "faradeen-ja/scaniom-releases"']);
+need("lib/open-ii/public-release.ts",['version: "0.4.2"','release: "R18"','repository: "faradeen-ja/scaniom-releases"']);
 need("app/api/scaniom/public-release/route.ts",["faradeen-ja/scaniom-releases/releases/latest","SHA256SUMS","publicationReceipt","provenance","fallback"]);
-need("app/docs/page.tsx",["OPEN IMMUNE · START A–Z","OIS AUTH","PROVIDER BYOK","ATTACHMENT BOUNDARIES","LIVE INTELLIGENCE + PROOF","docs-flow","StackIcon","AttachmentFabricGuide","scaniom artifacts supply-chain","@scaniom/sdk@0.4.1","scaniom==0.4.1","OPENAI_API_KEY","ANTHROPIC_API_KEY","GEMINI_API_KEY","CUSTOM_MODEL_TOKEN","PLACEHOLDERS → REAL VALUES"]);
+need("app/docs/page.tsx",["OPEN IMMUNE · START A–Z","OIS AUTH","PROVIDER BYOK","ATTACHMENT BOUNDARIES","LIVE INTELLIGENCE + PROOF","docs-flow","StackIcon","AttachmentFabricGuide","scaniom artifacts supply-chain","@scaniom/sdk@0.4.2","scaniom==0.4.2","OPENAI_API_KEY","ANTHROPIC_API_KEY","GEMINI_API_KEY","CUSTOM_MODEL_TOKEN","PLACEHOLDERS → REAL VALUES"]);
 need("components/AttachmentFabricGuide.tsx",["SEVEN EXECUTABLE BOUNDARIES · ONE IMMUNE FABRIC","Move the boundaries","L1","L2","L3","L4","L5","MCP","L6","onPointerMove","Reset layout","Open Scaniom Attachments ↗"]);
 need("components/PublicReleaseBadge.tsx",["faradeen-ja/scaniom-releases","GITHUB ↗","releases/tag/v"]);
 reject("app/docs/page.tsx",["./scripts/","./demos/"]);
 need("components/StackIcon.tsx",['kind === "typescript"','kind === "python"','kind === "docker"','kind === "kubernetes"','kind === "openai"','kind === "anthropic"','kind === "gemini"','kind === "aws"']);
-need("README.md",["# Start A–Z","https://control.scaniom.com/signup","scaniom artifacts supply-chain","scaniom provider catalog","scaniom secret configure OPENAI_API_KEY","L1 · API Route","No SDK is required","npm install @scaniom/sdk@0.4.1","python3 -m pip install scaniom==0.4.1","scaniom attach l3","scaniom attach l4","scaniom attach l5","scaniom attach mcp","scaniom attach l6","scaniom proof correlated list"]);
+need("README.md",["# Start A–Z","https://control.scaniom.com/signup","scaniom artifacts supply-chain","scaniom provider catalog","scaniom secret configure OPENAI_API_KEY","L1 · API Route","No SDK is required","npm install @scaniom/sdk@0.4.2","python3 -m pip install scaniom==0.4.2","scaniom attach l3","scaniom attach l4","scaniom attach l5","scaniom attach mcp","scaniom attach l6","scaniom proof correlated list"]);
 reject("README.md",["./scripts/verify-public-release.sh","./scripts/install-public-cli.sh"]);
 need("docs/start-here.md",["# Start A–Z","Provider keys and BYOK","Attachment boundaries"]);
 need(".env.example",["Provider credentials DO NOT belong in Open Immune environment files","scaniom secret configure OPENAI_API_KEY"]);
 
-need("components/workbench/OpenImmuneWorkbench.tsx",["LabTreeGroup kind=\"lab\" label=\"Labs\"","LIVE ARCHITECTURE · MANIFEST PREVIEW","FABRIC TREE","FABRIC MATRIX","INSPECTOR","LIVE INTELLIGENCE","WORK HERE","REQUIRES","REAL SCANIOM COMMANDS","PLACEMENT / INTEGRATION","GuideModal","WorkSurfaceLinks","isReleasedScaniomCliCommand","LAB MANIFEST","ProviderReality","ModelRuntimeReality","runtimeKindLabel","ResolvedRuntimeValues","RuntimeIdentityReality","REAL RUNTIME IDENTITY","Never paste provider keys here","Scaniom Control ↗","Copy CLI","createPortal","matrixResetButton","providerInspectorBlock","providerValuePanel","providerCardsGrid","providerRoutesPanel","next_${selectedStep.status}","onPointerMove","<main className={styles.matrixPane}>"]);
+need("components/workbench/OpenImmuneWorkbench.tsx",["LabTreeGroup kind=\"lab\" label=\"Labs\"","LIVE ARCHITECTURE · MANIFEST PREVIEW","FABRIC TREE","FABRIC MATRIX","INSPECTOR","LIVE INTELLIGENCE","WORK HERE","REQUIRES","REAL SCANIOM COMMANDS","PLACEMENT / INTEGRATION","GuideModal","WorkSurfaceLinks","isReleasedScaniomCliCommand","LAB MANIFEST","ProviderReality","ModelRuntimeReality","EnvironmentGatewayReality","REAL L5 GATEWAY STATE FROM SCANIOM CONTROL","runtimeKindLabel","ResolvedRuntimeValues","RuntimeIdentityReality","REAL RUNTIME IDENTITY","Never paste provider keys here","Scaniom Control ↗","Copy CLI","createPortal","matrixResetButton","providerInspectorBlock","providerValuePanel","providerCardsGrid","providerRoutesPanel","next_${selectedStep.status}","onPointerMove","<main className={styles.matrixPane}>"]);
 reject("components/workbench/OpenImmuneWorkbench.tsx",["Guided demos","GUIDED DEMO","DEMO-DRIVEN","import { ImmunityField }","WHY FABRIC?","FabricMatrixGuide","StepContextRail","DRAG NODES TO REFORM VIEW","verified by real Scaniom authority","panelToggle","PanelChevron","setTreeHidden","setInspectorHidden","globalPaneToggles","mobilePaneBackdrop","compactLayout","paneToggleButton","paneToggleActive"]);
-need("lib/open-ii/labs.ts",['export type LabKind = "lab" | "system"',"LabGuideOption","guideOptions","d00-account-auth","d02-l1-full-cycle","d12-immunex","flagship-full-fabric","system-saas","system-robots","system-lanes","system-factory","system-ifoc","does not require the L2 SDK","npm install @scaniom/sdk@0.4.1","python3 -m pip install scaniom==0.4.1","OPENAI_API_KEY","CUSTOM_MODEL_TOKEN","providerGuideOptions","labResolvedValues","selectedLabNode","selectedLabConnection","scaniom secret configure ${env}","scaniom runtime identity bootstrap","--attachments l1,l2,l4","--attachments l3","runtimeIdentity","runtimeTarget","runtimeIdentityVerified","requiredRuntimeIdentityAttachment","d05-l3-model-runtime","runtime_hook","/v1/responses","surface:"]);
-reject("lib/open-ii/labs.ts",["./scripts/verify-public-release.sh","./scripts/install-public-cli.sh","./demos/d09-fleet-failover/run.sh","./demos/d10-offline-continuity/run.sh","./demos/d12-immunex/run.sh","id: \"public-release\"","Released Scaniom","PUBLIC R18 · 0.4.1"]);
+need("lib/open-ii/labs.ts",['export type LabKind = "lab" | "system"',"LabGuideOption","guideOptions","d00-account-auth","d02-l1-full-cycle","d12-immunex","flagship-full-fabric","system-saas","system-robots","system-lanes","system-factory","system-ifoc","does not require the L2 SDK","npm install @scaniom/sdk@0.4.2","python3 -m pip install scaniom==0.4.2","OPENAI_API_KEY","CUSTOM_MODEL_TOKEN","providerGuideOptions","labResolvedValues","selectedLabNode","selectedLabConnection","scaniom secret configure ${env}","scaniom runtime identity bootstrap","--attachments l1,l2,l4","--attachments l3","runtimeIdentity","runtimeTarget","runtimeIdentityVerified","requiredRuntimeIdentityAttachment","d05-l3-model-runtime","runtime_hook","/v1/responses","surface:"]);
+reject("lib/open-ii/labs.ts",["./scripts/verify-public-release.sh","./scripts/install-public-cli.sh","./demos/d09-fleet-failover/run.sh","./demos/d10-offline-continuity/run.sh","./demos/d12-immunex/run.sh","id: \"public-release\"","Released Scaniom","PUBLIC R18 · 0.4.2"]);
 reject("lib/open-ii/labs.ts",['"guided"']);
 need("demos/d01-public-install/run.sh",["d01-public-install.json","publicRelease: true","standaloneCli: true","npmSdk: true","pypiSdk: true"]);
 need("demos/d02-l1-full-cycle/run.sh",["scaniom trajectory list","scaniom proof --env","No signed proof evidence found","scaniom proof correlated list"]);
@@ -53,9 +53,12 @@ need("demos/d03-l2-agent-sdk/agent.py",["guard_action",'action="agent_action"','
 reject("demos/d03-l2-agent-sdk/run.sh",["--attachments l2 --json"]);
 need("demos/d05-l3-model-runtime/README.md",["Workbench-first","vllm","nvidia_nim","triton","openai_compatible","runtime_hook","Gate executes before","explicit opt-in","Normal users do not run"]);
 need("demos/d05-l3-model-runtime/run.sh",["INTERNAL ENGINEERING / CI ACCEPTANCE HARNESS","SCANIOM_L3_TARGET_URL","--attachments l3","scaniom attach l3","scaniom attach test l3","runtime_hook proof path"]);
-need("tests/workbench.test.ts",["D00 remains entirely live Control authority","D01 becomes verified only after the real public install receipt exists","D02 proof verification comes from selected-workload Scaniom signed evidence","D03 closes only from live L2 runtime identity, SDK evidence and L2 signed proof","D05 verifies only from a real model runtime, explicit L3 identity, runtime_hook evidence and L3 proof"]);
-need("tests/lab-manifest.test.ts",["public release is metadata, not a blocking Lab tree step","no Lab CLI surface leaks repo shell scripts","L1 is a complete API-route runbook","all seven attachment boundaries expose placement/integration choices","provider BYOK steps keep secrets at the Node boundary and cover multi-provider/custom routes","Lab commands resolve safe Control-observable placeholders","D05 is a Workbench-first L3 flow with live runtime inventory and explicit least-privilege identity"]);
-need("tests/ui-foundation.test.ts",["workbench library is Labs-first","OIS Auth replaces","one immersive view","live public release status","D05 Inspector renders live model-runtime inventory and explicit L3 authority"]);
+need("demos/d06-l5-environment-gateway/README.md",["Workbench-first","--attachments l5","attachment_source=gateway","explicit least-privilege `l5` runtime-identity scope"]);
+need("demos/d06-l5-environment-gateway/run.sh",["INTERNAL ENGINEERING / CI ACCEPTANCE HARNESS","SCANIOM_NODE_URL","/v1/runtime/identity/exchange","credential?.token","--node-url","/v1/guard","scaniom_runtime_generation_stale","forwarded counter did not advance","trajectory show","proof correlated verify","SCANIOM_D06_PROVIDER_PROBE","D06 L5 ENVIRONMENT GATEWAY REAL EXECUTION PASS"]);
+need("tests/d06-l5-real-execution-closeout.test.ts",["provider-neutral L5 guard execution","generation convergence","gateway forwarding","valid correlated proof"]);
+need("tests/workbench.test.ts",["D00 remains entirely live Control authority","D01 becomes verified only after the real public install receipt exists","D02 proof verification comes from selected-workload Scaniom signed evidence","D03 closes only from live L2 runtime identity, SDK evidence and L2 signed proof","D05 verifies only from a real model runtime, explicit L3 identity, runtime_hook evidence and L3 proof","D06 verifies only from explicit L5 identity, gateway evidence and selected-workload L5 proof"]);
+need("tests/lab-manifest.test.ts",["public release is metadata, not a blocking Lab tree step","no Lab CLI surface leaks repo shell scripts","L1 is a complete API-route runbook","all seven attachment boundaries expose placement/integration choices","provider BYOK steps keep secrets at the Node boundary and cover multi-provider/custom routes","Lab commands resolve safe Control-observable placeholders","D05 is a Workbench-first L3 flow with live runtime inventory and explicit least-privilege identity","D06 is a Workbench-first L5 flow with explicit workload attribution and L5 runtime identity"]);
+need("tests/ui-foundation.test.ts",["workbench library is Labs-first","OIS Auth replaces","one immersive view","live public release status","D05 Inspector renders live model-runtime inventory and explicit L3 authority","D06 Inspector renders live L5 gateway state and explicit L5 authority"]);
 
 const privateDependency=/\.\.\/scaniom|\/scaniom\/scripts\/scaniom-cli\.mjs/;
 for(const p of ["app","components","lib","scripts"]){
@@ -81,7 +84,7 @@ need("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH R
 reject("components/workbench/OpenImmuneWorkbench.tsx",["treeVisible","inspectorVisible","treePreference","inspectorPreference","toggleTreePane","toggleInspectorPane","paneToggle","restorePane","restoreTree","restoreInspector","Hide Fabric Tree","Show Fabric Tree","Hide Inspector","Show Inspector","useSyncExternalStore","compactWorkbench"]);
 need("components/OisAuthConsole.tsx",["NETWORK OFFLINE","OFFLINE · SCANIOM CONTROL NOT CONTACTED"]);
 need("components/ScaniomConnection.tsx",["NETWORK OFFLINE","navigator.onLine"]);
-need("lib/open-ii/labs.ts",["d04-l4-sidecar","d05-l3-model-runtime","requiredRuntimeIdentityAttachment","runtimeIdentityVerified","--attachments l1,l2,l4","--attachments l3","runtimeTarget"]);
+need("lib/open-ii/labs.ts",["d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","requiredRuntimeIdentityAttachment","runtimeIdentityVerified","--attachments l1,l2,l4","--attachments l3","--attachments l5","runtimeTarget"]);
 reject("README.md",["Executable public run scripts remain under `demos/`"]);
 
 need("app/layout.tsx",["Metadata, Viewport",'width: "device-width"',"initialScale: 1",'viewportFit: "cover"']);
@@ -97,7 +100,7 @@ if(errors.length){console.error("OPEN IMMUNE INTELLIGENCE SOURCE AUDIT FAIL");fo
 
 console.log("OPEN IMMUNE INTELLIGENCE SOURCE AUDIT PASS");
 console.log("✓ canonical Cloud Control + OIS Auth terminology");
-console.log("✓ public R18 / 0.4.1 release status + accepted fallback");
+console.log("✓ public R18 / 0.4.2 release status + accepted fallback");
 console.log("✓ Start A-Z README + Web documentation");
 console.log("✓ provider BYOK keys remain Node/runtime-local");
 console.log("✓ L1 API Route is distinct from L2 SDK installation");
@@ -117,6 +120,6 @@ console.log("✓ D02 signed-proof completion comes from existing Scaniom operato
 console.log("✓ D03 executes released TypeScript + Python SDKs with shared B1 runtime identity, L2 evidence and attachment-specific signed proof");
 console.log("✓ D05 L3 verifies live model-runtime inventory, explicit L3 identity, runtime_hook evidence and attachment-specific signed proof");
 console.log("✓ Web↔CLI parity uses a local one-time browser challenge; no browser token or CLI credential is shared");
-console.log("✓ all real Labs use the installed source-independent R18/0.4.1 scaniom command from PATH");
+console.log("✓ all real Labs use the installed source-independent R18/0.4.2 scaniom command from PATH");
 console.log("✓ Node/policy/provider/attachment/behavior state verifies only from live Scaniom Control evidence");
 console.log("✓ public repo remains independent from private Scaniom source");

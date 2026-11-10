@@ -294,7 +294,7 @@ export type OpenIiLocalExecution = {
     labId: "d01-public-install";
     status: "pass";
     release: "R18";
-    scaniomVersion: "0.4.1";
+    scaniomVersion: "0.4.2";
     verifiedAt: string;
     checks: { publicRelease: true; standaloneCli: true; npmSdk: true; pypiSdk: true };
   } | null;
