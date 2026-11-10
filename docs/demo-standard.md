@@ -15,7 +15,7 @@ Before a Lab can create or mutate environment, workload, Node, policy, attachmen
 
 1. Open Immune Web has an active HttpOnly operator session for the selected Control profile.
 2. `scaniom` resolves from the operator installation outside the Open Immune repository.
-3. `scaniom version --json` is accepted `R18 / 0.4.1`.
+3. `scaniom version --json` is accepted `R18 / 0.4.2`.
 4. CLI profile URL/type matches the selected Open Immune Control profile.
 5. `scaniom auth status` and `scaniom whoami` succeed.
 

@@ -16,7 +16,7 @@ export function PublicReleaseBadge() {
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, []);
-  const current = release || { release: "R18", version: "0.4.1", source: "pinned" as const, verifiedAssets: { checksums: true, sigstore: true, publicationReceipt: true, provenance: true, sbom: true, standaloneTargets: 5 } };
+  const current = release || { release: "R18", version: "0.4.2", source: "pinned" as const, verifiedAssets: { checksums: true, sigstore: true, publicationReceipt: true, provenance: true, sbom: true, standaloneTargets: 5 } };
   const releaseHref = `${RELEASE_REPOSITORY}/releases/tag/v${encodeURIComponent(current.version)}`;
   return <a className="public-release-badge" href={releaseHref} target="_blank" rel="noreferrer" title="Open the public Scaniom release on GitHub">
     <i/>

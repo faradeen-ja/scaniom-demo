@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.13.0" },
-  "dependencies": { "@scaniom/sdk": "0.4.1" }
+  "dependencies": { "@scaniom/sdk": "0.4.2" }
 }

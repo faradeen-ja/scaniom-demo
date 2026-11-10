@@ -1,5 +1,5 @@
 export const SCANIOM_CLI_CONTRACT_RELEASE = "R18" as const;
-export const SCANIOM_CLI_CONTRACT_VERSION = "0.4.1" as const;
+export const SCANIOM_CLI_CONTRACT_VERSION = "0.4.2" as const;
 
 const rules: RegExp[] = [
   /^scaniom version(?:\s|$)/,

@@ -15,4 +15,47 @@ jobs:
         with: {python-version: "3.12"}
       - run: ./scripts/doctor.sh
       - run: ./scripts/verify-public-release.sh
+
+      - name: Install accepted public Scaniom CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="0.4.2"
+          ARCHIVE="r18-standalone-linux-amd64.tar.gz"
+          BASE="https://github.com/faradeen-ja/scaniom-releases/releases/download/v${VERSION}"
+
+          TMP="$(mktemp -d)"
+          trap 'rm -rf "$TMP"' EXIT
+
+          curl -fL "$BASE/SHA256SUMS"             -o "$TMP/SHA256SUMS"
+
+          curl -fL "$BASE/$ARCHIVE"             -o "$TMP/$ARCHIVE"
+
+          grep -E "[[:space:]]${ARCHIVE}$"             "$TMP/SHA256SUMS"             > "$TMP/archive.sha256"
+
+          test -s "$TMP/archive.sha256"
+
+          (
+            cd "$TMP"
+            sha256sum -c archive.sha256
+          )
+
+          ROOT="$HOME/.local/lib/scaniom/$VERSION"
+
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT"
+
+          tar -xzf "$TMP/$ARCHIVE"             -C "$ROOT"
+
+          test -x "$ROOT/bin/scaniom"
+          test -x "$ROOT/bin/scaniom-node"
+          test -x "$ROOT/libexec/node"
+          test -f "$ROOT/manifest.json"
+
+          "$ROOT/bin/scaniom" version --json
+
+          echo "SCANIOM_CLI_BIN=$ROOT/bin/scaniom" >> "$GITHUB_ENV"
+          echo "$ROOT/bin" >> "$GITHUB_PATH"
+
       - run: ./demos/d01-public-install/run.sh

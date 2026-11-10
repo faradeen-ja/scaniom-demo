@@ -6,7 +6,7 @@ D05 is a Workbench-first real Scaniom L3 flow. Normal users do not run this dire
 
 A selected Scaniom workload can place Gate immediately before a real inference runtime, preserve workload/session lineage, and emit `runtime_hook` evidence into the same trajectory and signed-proof system used by the rest of the Immune Fabric.
 
-Supported released R18 / 0.4.1 runtime kinds:
+Supported released R18 / 0.4.2 runtime kinds:
 
 - `vllm`
 - `nvidia_nim`

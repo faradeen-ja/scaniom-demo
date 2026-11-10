@@ -18,7 +18,7 @@ mkdir -p "$RECEIPT_DIR"
 node - "$RECEIPT_FILE" "$SCANIOM_VERSION" "$SCANIOM_RELEASE" <<'NODE'
 const fs = require("node:fs");
 const [file, version, release] = process.argv.slice(2);
-if (version !== "0.4.1" || release !== "R18") throw new Error(`unexpected accepted release ${release}/${version}`);
+if (version !== "0.4.2" || release !== "R18") throw new Error(`unexpected accepted release ${release}/${version}`);
 const receipt = {
   version: 1,
   labId: "d01-public-install",

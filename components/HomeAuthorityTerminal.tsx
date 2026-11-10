@@ -60,7 +60,7 @@ export function HomeAuthorityTerminal() {
       <div><span>CONTROL</span><b>{status?.profile.label || "Scaniom Cloud"}</b><small>{status?.profile.controlUrl || "https://control.scaniom.com"}</small></div>
       <div><span>OPERATOR</span><b>{online ? status?.identity?.displayName || status?.identity?.email || "Authorized" : "Not authorized"}</b><small>{online ? status?.identity?.organizationName || "Scaniom organization" : "Approve on Scaniom Control"}</small></div>
       <div><span>SCOPE</span><b>{scopeReady ? `${title(environment)} / ${title(workload)}` : online ? "Select environment + workload" : "Available after OIS Auth"}</b><small>{scopeReady ? "ready for Labs" : "real Scaniom resources only"}</small></div>
-      <div><span>PUBLIC RELEASE</span><b>{release ? `${release.release} / ${release.version}` : "R18 / 0.4.1"}</b><small>{release?.source === "github" ? "GitHub release live" : "accepted pinned baseline"}</small></div>
+      <div><span>PUBLIC RELEASE</span><b>{release ? `${release.release} / ${release.version}` : "R18 / 0.4.2"}</b><small>{release?.source === "github" ? "GitHub release live" : "accepted pinned baseline"}</small></div>
     </div>
     <footer><code>{online ? scopeReady ? "ois://ready/labs" : "ois://authorized/scope-required" : "ois://auth/scaniom"}</code><div><Link href="/workspace">OIS Auth →</Link><Link href="/workbench">Labs →</Link><Link href="/docs">Start A–Z →</Link></div></footer>
   </section>;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SCANIOM_VERSION="${SCANIOM_VERSION:-0.4.1}"
+SCANIOM_VERSION="${SCANIOM_VERSION:-0.4.2}"
 SCANIOM_RELEASE="${SCANIOM_RELEASE:-R18}"
 SCANIOM_PROFILE="${SCANIOM_PROFILE:-cloud}"
 SCANIOM_CONTROL_URL="${SCANIOM_CONTROL_URL:-https://control.scaniom.com}"
@@ -51,7 +51,21 @@ _realpath(){
 scaniom_cli_path(){
   require_cmd node
   local cli="${SCANIOM_CLI_BIN:-}"
-  if [ -z "$cli" ]; then cli="$(type -P scaniom 2>/dev/null || true)"; fi
+
+  # Prefer the accepted source-independent public bundle when installed
+  # in Open Immune's canonical per-version location. The user-facing
+  # ~/.local/bin/scaniom may be a shim and must not be mistaken for
+  # the standalone bundle root.
+  if [ -z "$cli" ]; then
+    local standalone="$HOME/.local/lib/scaniom/$SCANIOM_VERSION/bin/scaniom"
+    if [ -x "$standalone" ]; then
+      cli="$standalone"
+    fi
+  fi
+
+  if [ -z "$cli" ]; then
+    cli="$(type -P scaniom 2>/dev/null || true)"
+  fi
   [ -n "$cli" ] || return 1
   [ -x "$cli" ] || return 1
   local real root_real
@@ -92,7 +106,7 @@ require_scaniom_cli_install(){
     die "Refusing repo-local Scaniom CLI. Open Immune must use the installed public 'scaniom' command outside $ROOT. Fix PATH, then run: scaniom version --json"
   fi
   if [ "$rc" -eq 3 ]; then
-    die "Refusing a Scaniom source-checkout CLI launcher. Open Immune must use the accepted source-independent R18/0.4.1 public CLI installation. Fix PATH, then run: scaniom version --json"
+    die "Refusing a Scaniom source-checkout CLI launcher. Open Immune must use the accepted source-independent R18/0.4.2 public CLI installation. Fix PATH, then run: scaniom version --json"
   fi
   [ "$rc" -eq 0 ] || die "Installed Scaniom CLI not found on PATH. Install the accepted public Scaniom CLI, then confirm: scaniom version --json"
   verify_scaniom_cli_bundle "$cli"
@@ -113,7 +127,7 @@ scaniom(){
   cli="$(scaniom_cli_path)"; rc=$?
   set -e
   if [ "$rc" -eq 2 ]; then die "Refusing repo-local Scaniom CLI. Use the installed public 'scaniom' command from PATH."; fi
-  if [ "$rc" -eq 3 ]; then die "Refusing a Scaniom source-checkout CLI launcher. Use the accepted source-independent R18/0.4.1 public CLI installation."; fi
+  if [ "$rc" -eq 3 ]; then die "Refusing a Scaniom source-checkout CLI launcher. Use the accepted source-independent R18/0.4.2 public CLI installation."; fi
   [ "$rc" -eq 0 ] || die "Installed Scaniom CLI is unavailable. Run: scaniom version --json"
   SCANIOM_NO_ANIMATION=1 NO_COLOR=1 "$cli" "$@"
 }

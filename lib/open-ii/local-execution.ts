@@ -6,7 +6,7 @@ export type D01PublicInstallReceipt = {
   labId: "d01-public-install";
   status: "pass";
   release: "R18";
-  scaniomVersion: "0.4.1";
+  scaniomVersion: "0.4.2";
   verifiedAt: string;
   checks: {
     publicRelease: true;
@@ -28,7 +28,7 @@ function validD01(value: unknown): value is D01PublicInstallReceipt {
     && receipt.labId === "d01-public-install"
     && receipt.status === "pass"
     && receipt.release === "R18"
-    && receipt.scaniomVersion === "0.4.1"
+    && receipt.scaniomVersion === "0.4.2"
     && typeof receipt.verifiedAt === "string"
     && Number.isFinite(Date.parse(receipt.verifiedAt))
     && checks?.publicRelease === true

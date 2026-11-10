@@ -5,9 +5,9 @@ D03 proves the released TypeScript and Python Scaniom SDKs against a real Scanio
 The lab reuses the D00/D01/D02 authority and protected scope, preserves the shared B1 managed runtime-identity attachment scope (`l1,l2,l4`), then performs two harmless real semantic consequences:
 
 ```text
-TypeScript @scaniom/sdk@0.4.1 ─┐
+TypeScript @scaniom/sdk@0.4.2 ─┐
                                ├─ copy-once bootstrap → scn_ri_v1 → Node/Gate → local consequence → post-observe
-Python scaniom==0.4.1 ─────────┘
+Python scaniom==0.4.2 ─────────┘
                                                      ↓
                                            L2 / sdk evidence
                                                      ↓

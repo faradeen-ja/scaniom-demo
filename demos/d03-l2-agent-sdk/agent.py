@@ -11,7 +11,7 @@ from scaniom import Scaniom, __version__
 for key in ("SCANIOM_NODE_URL", "SCANIOM_WORKLOAD_ID", "SCANIOM_RUNTIME_BOOTSTRAP_TOKEN", "SCANIOM_D03_CONSEQUENCE"):
     if not os.environ.get(key):
         raise RuntimeError(f"{key} is required")
-if __version__ != "0.4.1":
+if __version__ != "0.4.2":
     raise RuntimeError(f"Unexpected scaniom package version {__version__}")
 
 consequence_path = Path(os.environ["SCANIOM_D03_CONSEQUENCE"]).resolve()

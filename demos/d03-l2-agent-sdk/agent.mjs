@@ -5,7 +5,7 @@ import { Scaniom, ScaniomBlockedError, SCANIOM_SDK_VERSION } from "@scaniom/sdk"
 for (const key of ["SCANIOM_NODE_URL", "SCANIOM_WORKLOAD_ID", "SCANIOM_RUNTIME_BOOTSTRAP_TOKEN", "SCANIOM_D03_CONSEQUENCE"]) {
   if (!process.env[key]) throw new Error(`${key} is required`);
 }
-if (SCANIOM_SDK_VERSION !== "0.4.1") throw new Error(`Unexpected @scaniom/sdk version ${SCANIOM_SDK_VERSION}`);
+if (SCANIOM_SDK_VERSION !== "0.4.2") throw new Error(`Unexpected @scaniom/sdk version ${SCANIOM_SDK_VERSION}`);
 
 const consequencePath = path.resolve(process.env.SCANIOM_D03_CONSEQUENCE);
 const scaniom = new Scaniom({
