@@ -468,6 +468,8 @@ scaniom runtime identity bootstrap \
 
 L6 is the executable framework. Vendor-specific adapters remain separate integrations.
 
+`scaniom attach test l6` verifies the released guard contract only. It intentionally does **not** execute a provider consequence or invent post-observe evidence. To complete D08, the real provider/runtime adapter must call guard, execute its legitimate consequence only when permitted, then call observe with the pre-behavior parent. Completion comes from `provider_native` pre/post trajectory plus signed correlated proof.
+
 ---
 
 # Local, VM, Docker, Kubernetes and private environments
@@ -527,7 +529,7 @@ what architecture should exist
 what evidence would prove it
 ```
 
-Executable public run scripts remain under `demos/`. The Workbench is the visual engineering front end to those real contracts, not a replacement for them.
+Reference execution / acceptance harnesses remain under `demos/`. Normal users learn and build through the Workbench, Start A–Z, released Scaniom CLI commands, deployment/code guidance and live evidence. The harnesses independently prove that those public instructions are executable; they are not the primary Lab UX.
 
 ---
 

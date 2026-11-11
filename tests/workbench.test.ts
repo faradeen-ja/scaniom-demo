@@ -204,3 +204,31 @@ test("D06 verifies only from explicit L5 identity, gateway evidence and selected
   const wrongAttachmentProof = buildLabRuntime(lab, { ...live, proof: { evidence: [{ ...live.proof!.evidence![0], attachment_source: "sidecar", attachment_label: "L4" }] } });
   assert.equal(wrongAttachmentProof.runtimeSteps.find((step) => step.id === "proof")?.status, "ready");
 });
+
+
+test("D08 verifies only from explicit L6 identity, provider_native evidence and selected-workload L6 proof", () => {
+  const lab = labById("d08-l6-provider-native")!;
+  const live = context({
+    workspace: { version: 1, profileName: "cloud", organizationId: "org1", environmentId: "env1", workloadId: "work1" },
+    workloads: [{ id: "work1", name: "Native Adapter", slug: "native-adapter", kind: "service", status: "active", environment_id: "env1", active_address: "scn://example/native-adapter" }],
+    nodes: [{ id: "node1", name: "prod-ai-01", slug: "prod-ai-01", environment_id: "env1", operational_state: "online", status: "active" }],
+    policies: [{ environment_id: "env1", environment_name: "Production", mode: "enforce", version: 7 }],
+    runtimeIdentity: { ok: true, identity: { identityId: "ri-l6", workloadId: "work1", workloadName: "Native Adapter", environmentId: "env1", status: "active", generation: 1, attachments: ["l6"], lease: { leaseId: "lease-l6", status: "active" } } },
+    attachments: { levels: [{ id: "l6", level: "L6", configured: true, ready: true, evidence: { total: 2 } }] },
+    proof: { evidence: [{ id: "receipt-l6", kind: "receipt", occurred_at: "2026-11-10T00:00:00.000Z", environment_id: "env1", environment_name: "Production", workload_name: "Native Adapter", node_name: "prod-ai-01", provider: "open-immune", attachment_source: "provider_native", attachment_label: "L6", policy_version: 7, policy_digest: "sha256:l6", machine_action: "pass", count: 1, behavior_event_id: "beh-l6", merkle_root: null, key_fingerprint: "key-l6", verification: "valid" }] },
+  });
+  const runtime = buildLabRuntime(lab, live);
+  for (const id of ["runtime-identity", "attach-l6", "behavior", "proof"]) {
+    assert.equal(runtime.runtimeSteps.find((step) => step.id === id)?.status, "verified", id);
+  }
+
+  const wrongScope = buildLabRuntime(lab, { ...live, runtimeIdentity: { identity: { ...live.runtimeIdentity!.identity!, attachments: ["mcp"] } } });
+  assert.equal(wrongScope.runtimeSteps.find((step) => step.id === "runtime-identity")?.status, "ready");
+  assert.equal(wrongScope.runtimeSteps.find((step) => step.id === "attach-l6")?.status, "locked");
+
+  const wrongEvidence = buildLabRuntime(lab, { ...live, attachments: { levels: [{ id: "l6", level: "L6", configured: true, ready: true, evidence: { total: 0 } }] } });
+  assert.notEqual(wrongEvidence.runtimeSteps.find((step) => step.id === "behavior")?.status, "verified");
+
+  const wrongProof = buildLabRuntime(lab, { ...live, proof: { evidence: [{ ...live.proof!.evidence![0], attachment_source: "mcp_gateway", attachment_label: "MCP" }] } });
+  assert.equal(wrongProof.runtimeSteps.find((step) => step.id === "proof")?.status, "ready");
+});

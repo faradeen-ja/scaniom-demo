@@ -218,12 +218,44 @@ function ResolvedRuntimeValues({ context, lab }: { context: OpenIiContextRespons
 }
 
 
+
+function ProviderNativeReality({ context }: { context: OpenIiContextResponse }) {
+  const level = context.attachments?.levels?.find((item) => String(item.id || item.level || "").toLowerCase() === "l6") || null;
+  const evidence = Number(level?.evidence?.total || 0);
+  const configured = level?.configured === true;
+  const ready = level?.ready === true;
+  return <section className={styles.providerInspectorBlock} aria-label="L6 provider-native authority">
+    <div className={styles.providerAuthorityStack}>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="code" size={18}/></span>
+        <div><small>REAL PROVIDER / RUNTIME ADAPTER</small><b>Adapter owns the legitimate consequence</b></div>
+      </div>
+      <div className={styles.providerAuthorityConnector} aria-hidden="true"><span/></div>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="scaniom" size={18}/></span>
+        <div><small>SCANIOM L6</small><b>Guard before consequence · observe after outcome</b></div>
+      </div>
+    </div>
+    <div className={styles.providerRoutesPanel}>
+      <div className={styles.providerRoutesTitle}>REAL L6 STATE FROM SCANIOM CONTROL</div>
+      <div className={styles.providerRouteRows}>
+        <div className={styles.providerRouteRow}>
+          <span className={styles.providerRouteIcon}><StackIcon kind="shield" size={17}/></span>
+          <div><small>{configured ? "ADAPTER REGISTERED" : "ADAPTER NOT REGISTERED"} · {ready ? "FABRIC READY" : "FABRIC NOT READY"}</small><b>{evidence} provider-native behavior event{evidence === 1 ? "" : "s"} / 24h</b><em>Evidence source: provider_native · proof level: L6</em></div>
+        </div>
+      </div>
+      <p className={styles.providerRoutesNote}>The generic bridge never dispatches a vendor consequence. A legitimate provider/runtime adapter must call L6 guard, perform the consequence only when permitted, then call observe with the pre-behavior parent. Raw prompt/content stays outside the generic bridge.</p>
+    </div>
+  </section>;
+}
+
 function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextResponse; lab: LabManifest }) {
   const identity = context.runtimeIdentity?.identity || null;
   const attachments = (identity?.attachments || []).map((item) => String(item).toUpperCase()).join(" + ") || "—";
   const isL3 = lab.id === "d05-l3-model-runtime";
   const isL5 = lab.id === "d06-l5-environment-gateway";
   const isMcp = lab.id === "d07-mcp-gateway";
+  const isL6 = lab.id === "d08-l6-provider-native";
   const rows = identity ? [
     ["STATE", String(identity.status || "unknown").toUpperCase()],
     ["IDENTITY", identity.identityId || "—"],
@@ -240,7 +272,9 @@ function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextRespon
         ? <p><b>L5 is an explicit least-privilege environment-gateway scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l5</code>. Every request through the shared environment ingress must still carry the originating workload authority; Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>
         : isMcp
           ? <p><b>MCP is an explicit least-privilege tool-boundary scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments mcp</code>. The MCP Gateway carries that workload authority into Gate before <code>tools/call</code> reaches the upstream server, then records post-observe lineage without exposing the token to Open Immune.</p>
-          : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
+          : isL6
+        ? <p><b>L6 is an explicit least-privilege provider-native scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l6</code>. The provider/runtime adapter keeps its own adapter identity, asks the L6 bridge before consequence, and reports the outcome afterward. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>
+        : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
     </div>
   </div>;
 }
@@ -698,6 +732,7 @@ export function OpenImmuneWorkbench() {
             {selectedStep.id === "provider" && lab.id !== "d05-l3-model-runtime" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
             {selectedStep.id === "provider" && lab.id === "d05-l3-model-runtime" ? <ModelRuntimeReality context={context}/> : null}
             {context && lab.id === "d06-l5-environment-gateway" && selectedStep.id === "attach-l5" ? <EnvironmentGatewayReality context={context}/> : null}
+            {context && lab.id === "d08-l6-provider-native" && selectedStep.id === "attach-l6" ? <ProviderNativeReality context={context}/> : null}
             {context && ["runtime-identity", "attach-l2", "attach-l3", "attach-l5", "attach-mcp"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
             {context && ["provider", "attach-l1", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 

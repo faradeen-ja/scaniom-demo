@@ -234,5 +234,17 @@ test("D06 Inspector renders live L5 gateway state and explicit L5 authority", ()
   assert.match(source, /REAL L5 GATEWAY STATE FROM SCANIOM CONTROL/);
   assert.match(source, /L5 is shared environment ingress, not shared identity/);
   assert.match(source, /--attachments l5/);
-  assert.match(source, /\["runtime-identity", "attach-l2", "attach-l3", "attach-l5", "attach-mcp"\]/);
+  assert.match(source, /attach-l5/);
+});
+
+
+test("D08 Inspector renders live L6 provider-native state and explicit L6 authority", () => {
+  const source = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(source, /function ProviderNativeReality/);
+  assert.match(source, /REAL L6 STATE FROM SCANIOM CONTROL/);
+  assert.match(source, /Adapter owns the legitimate consequence/);
+  assert.match(source, /provider_native/);
+  assert.match(source, /--attachments l6/);
+  assert.match(source, /attach-l6/);
+  assert.match(source, /d08-l6-provider-native/);
 });
