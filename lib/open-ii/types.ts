@@ -288,6 +288,124 @@ export type OperatorCorrelatedProof = {
   [key: string]: unknown;
 };
 
+
+export type OperatorFabricNodePoolMember = {
+  nodeId: string;
+  name?: string;
+  slug?: string;
+  state?: string;
+  eligible?: boolean;
+  eligibilityReasons?: string[];
+  routingState?: string;
+  routingWeight?: number;
+  runtimeEndpoint?: string | null;
+  [key: string]: unknown;
+};
+
+export type OperatorFabricNodePool = {
+  id: string;
+  environmentId?: string;
+  name?: string;
+  slug?: string;
+  status?: string;
+  isDefault?: boolean;
+  memberCount?: number;
+  onlineCount?: number;
+  eligibleCount?: number;
+  capacityState?: string;
+  members?: OperatorFabricNodePoolMember[];
+  [key: string]: unknown;
+};
+
+export type OperatorFabricPoolBinding = {
+  workloadId?: string;
+  poolId: string;
+  poolName?: string;
+  poolSlug?: string;
+  memberCount?: number;
+  onlineCount?: number;
+  eligibleCount?: number;
+  workloadEligibleCount?: number;
+  availability?: string;
+  [key: string]: unknown;
+};
+
+export type OperatorFabricRoutingCandidate = {
+  nodeId: string;
+  nodeName?: string;
+  endpoint?: string | null;
+  state?: string;
+  rank?: number | null;
+  [key: string]: unknown;
+};
+
+export type OperatorFabricRoutingPlan = {
+  version?: string;
+  workloadId?: string;
+  workloadName?: string;
+  environmentId?: string;
+  routeKey?: string;
+  strategy?: string;
+  ready?: boolean;
+  failClosed?: boolean;
+  redundant?: boolean;
+  selectedNodeId?: string | null;
+  selectedEndpoint?: string | null;
+  readyCandidates?: number;
+  retryPolicy?: string;
+  candidates?: OperatorFabricRoutingCandidate[];
+  [key: string]: unknown;
+};
+
+export type OperatorFabricWorkload = {
+  id: string;
+  environmentId?: string;
+  name?: string;
+  slug?: string;
+  poolBindings?: OperatorFabricPoolBinding[];
+  routing?: OperatorFabricRoutingPlan | null;
+  [key: string]: unknown;
+};
+
+export type OperatorFabricSnapshot = {
+  selectedEnvironmentId?: string | null;
+  nodePools?: OperatorFabricNodePool[];
+  workloads?: OperatorFabricWorkload[];
+  totals?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+export type OperatorOfflineContinuityContract = {
+  mode?: string;
+  maxOfflineSeconds?: number;
+  maxCredentialStaleSeconds?: number;
+  maxSpoolBytes?: number;
+  unknownAuthority?: string;
+  bootstrapWhileOffline?: boolean;
+  evidenceReplayRequired?: boolean;
+  [key: string]: unknown;
+};
+
+export type OperatorOfflineContinuityItem = {
+  nodeId: string;
+  nodeName?: string;
+  environmentId?: string;
+  environmentName?: string;
+  operationalState?: string;
+  lastHeartbeatAt?: string | null;
+  reported?: Record<string, unknown>;
+  controlView?: "online" | "continuity-window" | "expired" | "unavailable" | "revoked" | string;
+  continuityUntil?: string | null;
+  note?: string;
+  [key: string]: unknown;
+};
+
+export type OperatorOfflineContinuityState = {
+  ok?: boolean;
+  contract?: OperatorOfflineContinuityContract;
+  items?: OperatorOfflineContinuityItem[];
+};
+
 export type OpenIiLocalExecution = {
   d01PublicInstall?: {
     version: 1;
@@ -298,6 +416,71 @@ export type OpenIiLocalExecution = {
     verifiedAt: string;
     checks: { publicRelease: true; standaloneCli: true; npmSdk: true; pypiSdk: true };
   } | null;
+  d09FleetFailover?: {
+    version: 1;
+    labId: "d09-fleet-failover";
+    status: "pass";
+    release: "R18";
+    scaniomVersion: "0.4.2";
+    verifiedAt: string;
+    environmentId: string;
+    workloadId: string;
+    poolId: string;
+    controlRouteKey: string;
+    sdkSession: string;
+    failedNodeId: string;
+    failoverNodeId: string;
+    correlationId: string;
+    proofId: string;
+    checks: {
+      twoRealNodes: true;
+      poolBound: true;
+      deterministicRouting: true;
+      healthFailover: true;
+      protectedBefore: true;
+      protectedAfter: true;
+      validProof: true;
+      noReplay: true;
+      restored: true;
+    };
+  } | null;  d10OfflineContinuity?: {
+    version: 2;
+    labId: "d10-offline-continuity";
+    status: "pass";
+    release: "R18";
+    scaniomVersion: "0.4.2";
+    verifiedAt: string;
+    environmentId: string;
+    workloadId: string;
+    nodeId: string;
+    nodeName: string;
+    routeId: string;
+    runId: string;
+    continuityUntil: string;
+    maxOfflineSeconds: 14400;
+    maxCredentialStaleSeconds: 1800;
+    maxSpoolBytes: 268435456;
+    spoolPeakBytes: number;
+    replayedEnvelopes: number;
+    identity: { identityId: string; generation: number; attachments: string[] };
+    boundaries: Record<string, { level: string; source: string; session: string; correlationId: string; proofId: string; eventCount: number; onlineConsequenceId: string; offlineConsequenceId: string }>;
+    checks: {
+      signedContinuity: true;
+      allSevenIdentityScopes: true;
+      onlineBaselineAllSeven: true;
+      offlineProtected: true;
+      bootstrapDenied: true;
+      protectedOfflineAllSeven: true;
+      evidenceBuffered: true;
+      controlAbsentWhileOffline: true;
+      evidenceReplayed: true;
+      allSevenTrajectories: true;
+      allSevenProofs: true;
+      noReplay: true;
+      cleanShutdown: true;
+    };
+  } | null;
+
 };
 
 export type OpenIiContextResponse = {
@@ -319,6 +502,8 @@ export type OpenIiContextResponse = {
   attachments?: OperatorAttachmentState | null;
   runtimeIdentity?: OperatorRuntimeIdentityState | null;
   modelRuntimes?: OperatorModelRuntimeAdapter[];
+  fabric?: OperatorFabricSnapshot | null;
+  offlineContinuity?: OperatorOfflineContinuityState | null;
   proof?: OperatorProofState | null;
   correlatedProofs?: OperatorCorrelatedProof[];
   execution?: OpenIiLocalExecution;

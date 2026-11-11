@@ -1,37 +1,38 @@
-# Open Immune Intelligence — local start
+# Open Immune Intelligence - local engineering start
 
-This source bundle is the public `faradeen-ja/scaniom-demo` repository with the A0 Open Immune Intelligence profile/auth foundation already applied locally.
+This file is for repository contributors and maintainers. Public users should start in the Web `Start A-Z` guide and Workbench and use the installed released Scaniom CLI; they do not need repository acceptance scripts.
 
 ## Open in VS Code
 
-From the parent directory:
-
 ```bash
-cd open-immune-intelligence
+cd OPEN-IMMUNE-INTELLIGENCE
 code .
 ```
 
 ## Install web dependencies
 
-From the repository root:
-
 ```bash
 npm install
-```
-
-Then generate the local Open Immune secret/environment file if needed:
-
-```bash
 bash scripts/open-ii-bootstrap.sh
 ```
 
-## Run local acceptance
+`open-ii-bootstrap.sh` prepares Open Immune's local web environment. It does not replace Scaniom authentication, Node authority, or provider/runtime credentials.
+
+## Run repository acceptance
 
 ```bash
-bash scripts/open-ii-local-acceptance.sh
+OPEN_II_CANDIDATE="local-change" npm run accept:local
 ```
 
-## Start the app
+Required closeout:
+
+```text
+OPEN IMMUNE INTELLIGENCE LOCAL ACCEPTANCE PASS
+A1 LOCAL_ACCEPTED
+No GitHub push/PR/merge/deploy has been authorized by this command.
+```
+
+## Start the local Web experience
 
 ```bash
 npm run dev
@@ -39,8 +40,28 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+Public/customer Lab work then happens through:
+
+```text
+Open Immune Workbench
+  -> OIS Auth
+  -> installed released scaniom CLI
+  -> real Scaniom Control / Node / SDK / runtime boundaries
+  -> behavior / trajectory / proof
+```
+
+## Internal Lab harnesses
+
+Files under `demos/` are internal engineering/CI acceptance harnesses. They automate the same released Scaniom contracts for regression and closeout; they are not another user-facing CLI and are not the public Lab workflow.
+
+See:
+
+- `docs/PUBLIC-EXPERIENCE-RUNBOOK.md`
+- `docs/LAB-COMMAND-MATRIX.md`
+- `docs/BOUNDARY-REFERENCE.md`
+- `docs/INTERNAL-ENGINEERING-RUNBOOK.md`
+- `docs/OPEN-IMMUNE-END-TO-END-PACKET.md`
+
 ## Future changes
 
-All normal future build/fix/update packages go under `up-patches/` and are applied from this repository root. Do not run these Open Immune patches in the private `faradeen-ja/scaniom` product repository.
-
-GitHub push/PR/merge remains a second stage after local A1 acceptance.
+Normal build/fix/update packages go under repo-local `up-patches/`. Apply them from this repository root, run the complete local acceptance gate, inspect the git delta, and only then enter the GitHub stage if explicitly authorized.

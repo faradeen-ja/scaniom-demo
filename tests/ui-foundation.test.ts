@@ -248,3 +248,31 @@ test("D08 Inspector renders live L6 provider-native state and explicit L6 author
   assert.match(source, /attach-l6/);
   assert.match(source, /d08-l6-provider-native/);
 });
+
+
+test("D09 Inspector renders live D1/D2/D3 fabric and receipt-backed failover state", () => {
+  const source = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(source, /function FleetFailoverReality/);
+  assert.match(source, /D1 · D2 · D3 FABRIC/);
+  assert.match(source, /REAL ROUTING FROM SCANIOM CONTROL/);
+  assert.match(source, /REAL FAILOVER VERIFIED/);
+  assert.match(source, /d09-fleet-failover/);
+  assert.match(source, /node-pool/);
+  assert.match(source, /routing/);
+  assert.match(source, /failover/);
+});
+
+
+test("D10 Inspector renders seven-boundary B2 continuity, bounded authority and replay evidence", () => {
+  const source = read("components/workbench/OpenImmuneWorkbench.tsx");
+  assert.match(source, /OfflineContinuityReality/);
+  assert.match(source, /R18-B2 · FULL IMMUNE FABRIC/);
+  assert.match(source, /7\/7 PROOFS/);
+  assert.match(source, /L1 API Route/);
+  assert.match(source, /L3 Model Runtime/);
+  assert.match(source, /MCP Gateway/);
+  assert.match(source, /L6 Provider Native/);
+  assert.match(source, /OFFLINE BOOTSTRAP/);
+  assert.match(source, /14 unique online\/offline consequences/);
+  assert.match(source, /does not fast-forward four hours/);
+});

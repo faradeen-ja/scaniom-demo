@@ -15,6 +15,8 @@ import type {
   OperatorCorrelatedProof,
   OperatorRuntimeIdentityState,
   OperatorModelRuntimeState,
+  OperatorFabricSnapshot,
+  OperatorOfflineContinuityState,
 } from "@/lib/open-ii/types";
 
 export const runtime = "nodejs";
@@ -68,14 +70,22 @@ export async function GET(request: Request) {
     const modelRuntimePath = workspace?.workloadId
       ? `/api/v1/operator/model-runtimes?workload=${encodeURIComponent(workspace.workloadId)}`
       : null;
+    const fabricPath = workspace?.environmentId
+      ? `/api/v1/operator/fabric?environment=${encodeURIComponent(workspace.environmentId)}`
+      : null;
+    const offlineContinuityPath = workspace?.environmentId
+      ? `/api/v1/operator/offline-continuity?environment=${encodeURIComponent(workspace.environmentId)}`
+      : null;
 
-    const [nodes, connections, policies, attachments, runtimeIdentity, modelRuntimeState, proof, correlatedEnvelope, execution] = await Promise.all([
+    const [nodes, connections, policies, attachments, runtimeIdentity, modelRuntimeState, fabric, offlineContinuity, proof, correlatedEnvelope, execution] = await Promise.all([
       optionalItems<OperatorNode>(current.profile, current.session.token, "/api/v1/operator/nodes"),
       optionalItems<OperatorConnection>(current.profile, current.session.token, "/api/v1/operator/connections"),
       optionalItems<OperatorPolicy>(current.profile, current.session.token, "/api/v1/operator/policy"),
       optionalAttachmentState(current.profile, current.session.token, workspace?.workloadId),
       runtimeIdentityPath ? optionalJson<OperatorRuntimeIdentityState>(current.profile, current.session.token, runtimeIdentityPath) : Promise.resolve(null),
       modelRuntimePath ? optionalJson<OperatorModelRuntimeState>(current.profile, current.session.token, modelRuntimePath) : Promise.resolve(null),
+      fabricPath ? optionalJson<OperatorFabricSnapshot>(current.profile, current.session.token, fabricPath) : Promise.resolve(null),
+      offlineContinuityPath ? optionalJson<OperatorOfflineContinuityState>(current.profile, current.session.token, offlineContinuityPath) : Promise.resolve(null),
       optionalJson<OperatorProofState>(current.profile, current.session.token, `/api/v1/operator/proof?window=24h&limit=100${environmentParam}`),
       optionalJson<{ items?: OperatorCorrelatedProof[] }>(current.profile, current.session.token, `/api/v1/operator/correlated-proofs${correlatedParam}`),
       readLocalExecutionState(),
@@ -100,6 +110,8 @@ export async function GET(request: Request) {
       attachments,
       runtimeIdentity,
       modelRuntimes: Array.isArray(modelRuntimeState?.runtimes) ? modelRuntimeState.runtimes : [],
+      fabric,
+      offlineContinuity,
       proof,
       correlatedProofs: Array.isArray(correlatedEnvelope?.items) ? correlatedEnvelope.items : [],
       execution,

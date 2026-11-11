@@ -24,7 +24,7 @@ const rules: RegExp[] = [
   /^scaniom configure\s+(?:show|bootstrap|runtime|immunex)(?:\s|$)/,
   /^scaniom attach\s+(?:status|architecture|l1|l2|l3|l4|l5|mcp|l6)(?:\s|$)/,
   /^scaniom attach\s+test\s+(?:l1|l2|l3|l4|l5|mcp|l6)(?:\s|$)/,
-  /^scaniom fabric(?:\s*$|\s+--env\b|\s+(?:add\s+(?:nodes|workload)|pool\s+(?:create|members)|pools\b|workload\s+pools\b|routing\s+preview\b|deployment\b|policy\b|configure\s+workload\b|route\b|plan\b|apply\b|cancel\s+enrollment\b))/,
+  /^scaniom fabric(?:\s*$|\s+--env\b|\s+(?:add\s+(?:nodes|workload)|pool\s+(?:create|update|members)|pools\b|workload\s+pools\b|routing\s+(?:node|preview|env)\b|deployment\b|policy\b|configure\s+workload\b|route\b|plan\b|apply\b|cancel\s+enrollment\b))/,
   /^scaniom fleet(?:\s|$)/,
   /^scaniom live(?:\s|$)/,
   /^scaniom top(?:\s|$)/,
