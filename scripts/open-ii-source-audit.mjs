@@ -84,7 +84,10 @@ need("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH R
 reject("components/workbench/OpenImmuneWorkbench.tsx",["treeVisible","inspectorVisible","treePreference","inspectorPreference","toggleTreePane","toggleInspectorPane","paneToggle","restorePane","restoreTree","restoreInspector","Hide Fabric Tree","Show Fabric Tree","Hide Inspector","Show Inspector","useSyncExternalStore","compactWorkbench"]);
 need("components/OisAuthConsole.tsx",["NETWORK OFFLINE","OFFLINE · SCANIOM CONTROL NOT CONTACTED"]);
 need("components/ScaniomConnection.tsx",["NETWORK OFFLINE","navigator.onLine"]);
-need("lib/open-ii/labs.ts",["d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","requiredRuntimeIdentityAttachment","runtimeIdentityVerified","--attachments l1,l2,l4","--attachments l3","--attachments l5","runtimeTarget"]);
+need("lib/open-ii/labs.ts",["d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","d07-mcp-gateway","requiredRuntimeIdentityAttachment","runtimeIdentityVerified","--attachments l1,l2,l4","--attachments l3","--attachments l5","--attachments mcp","runtimeTarget"]);
+need("demos/d07-mcp-gateway/run.sh","demos/d08-l6-provider-native/run.sh",["/v1/runtime/identity/exchange","--attachments mcp","--node-url \"$NODE_URL\"","method:\"tools/call\"","mcp_gateway","forwarded","observed","proof correlated verify","D07 MCP GATEWAY REAL EXECUTION PASS"]);
+need("demos/d07-mcp-gateway/reference-server.mjs",["open_immune_record","server/discover","tools/list","tools/call","2026-07-28","contentStored: false","fs.appendFileSync"]);
+need("demos/d07-mcp-gateway/README.md",["real Streamable HTTP MCP","Gate executes **before** `tools/call`","--attachments mcp","mcp_gateway","pre + post"]);
 reject("README.md",["Executable public run scripts remain under `demos/`"]);
 
 need("app/layout.tsx",["Metadata, Viewport",'width: "device-width"',"initialScale: 1",'viewportFit: "cover"']);
@@ -96,8 +99,67 @@ reject("components/workbench/OpenImmuneWorkbench.module.css",["OPEN-II WORKBENCH
 reject("app/globals.css",["OPEN-II RESPONSIVE REPO · FINAL V3","OPEN-II D04 EXEC4 · responsive shell repair"]);
 reject("components/ImmunityField.module.css",["OPEN-II IMMUNITY FIELD RESPONSIVE · FINAL V3"]);
 
+
+need("demos/d08-l6-provider-native/run.sh",["--attachments l6","reference-adapter.mjs","provider_native","custom_action","pre + post","proof correlated verify","D08 L6 PROVIDER NATIVE REAL EXECUTION PASS"]);
+need("demos/d08-l6-provider-native/reference-adapter.mjs",['bridge("/v1/guard"',"appendFileSync",'bridge("/v1/observe"',"preBehaviorEventId: guard.behaviorEventId","contextDigest","contentStored: false"]);
+need("demos/d08-l6-provider-native/README.md",["synthetic guard only","cannot close D08","pre + post","VALID L6 correlated proof"]);
+need("scripts/ensure-scope.sh",["scaniom policy list","policy already matches enforce / general"]);
+
+
+need("demos/d09-fleet-failover/run.sh",["fabric pool create","fabric workload pools","fabric routing node","fabric routing preview","--attachments l1,l2,l4","reference-client.mjs","node stop","no ambiguous consequence replay","restore_secondary","D09 FLEET + FAILOVER REAL EXECUTION PASS"]);
+need("demos/d09-fleet-failover/reference-client.mjs",['from "@scaniom/sdk"',"nodeTargets:targets","routingHealthTtlMs:500","guardAction","appendFileSync","autoRenewRuntimeIdentity:false"]);
+need("demos/d09-fleet-failover/README.md",["two real Scaniom Nodes","pre_dispatch_health_failover_no_ambiguous_replay","Control D3","runtime URLs"]);
+need("app/api/scaniom/context/route.ts",["/api/v1/operator/fabric?environment=","fabric,"]);
+need("lib/open-ii/local-execution.ts",["d09-fleet-failover.json","d09FleetFailover","healthFailover","noReplay","restored"]);
+need("lib/open-ii/types.ts",["OperatorFabricSnapshot","OperatorFabricNodePool","OperatorFabricRoutingPlan","d09FleetFailover"]);
+
+// PUBLIC / INTERNAL DOCUMENTATION CLOSEOUT.
+need("docs/PUBLIC-EXPERIENCE-RUNBOOK.md",["public Open Immune experience","Public users do not run repository shell harnesses","D10 public offline-continuity experience","L1 API Route","L2 SDK","L3 Model Runtime","L4 Sidecar","L5 Environment Gateway","MCP Gateway","L6 Provider Native"]);
+need("docs/INTERNAL-ENGINEERING-RUNBOOK.md",["engineering acceptance robot","npm run accept:local","A1 LOCAL_ACCEPTED","explicit authorization","demos/d10-offline-continuity/run.sh","14 unique consequences","seven E1 trajectories","7 VALID E2 correlated proofs"]);
+need("docs/LAB-COMMAND-MATRIX.md",["D00-D12 + Flagship","D10 - Offline Continuity","Flagship - Full Immune Fabric","scaniom runtime continuity","scaniom proof correlated verify"]);
+need("docs/BOUNDARY-REFERENCE.md",["One fabric, seven entry points","provider_proxy","sdk","runtime_hook","sidecar","gateway","mcp_gateway","provider_native","14,400 seconds (4h)"]);
+need("docs/OPEN-IMMUNE-END-TO-END-PACKET.md",["End-to-End Public + Internal Operating Packet","Public experience in ten moves","D10 full accepted architecture","Documentation source of truth"]);
+need("app/docs/page.tsx",["LAB_CATALOG","PUBLIC NATIVE LAB RUNBOOKS","publicLabRunbooks","systemBlueprints","lab.steps.map","No repository shell harness is a public Lab prerequisite"]);
+reject("app/docs/page.tsx",["demos/","run.sh"]);
+need("docs/architecture.md",["internal engineering/CI acceptance harnesses under demos/","Public vs internal execution lanes"]);
+reject("docs/architecture.md",["executable public Lab scripts under demos/"]);
+need("docs/start-here.md",["internal engineering/CI acceptance harnesses","docs/PUBLIC-EXPERIENCE-RUNBOOK.md","docs/INTERNAL-ENGINEERING-RUNBOOK.md"]);
+reject("docs/start-here.md",["Executable public run scripts remain under `demos/`"]);
+for(const rel of ["d00-account-auth","d01-public-install","d02-l1-full-cycle","d03-l2-agent-sdk","d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","d07-mcp-gateway","d08-l6-provider-native","d09-fleet-failover","d10-offline-continuity","d11-multi-provider","d12-immunex","flagship-full-fabric"]){need(`demos/${rel}/README.md`,["Public / native Scaniom flow","Internal / engineering acceptance"]);}
+need("tests/documentation-contract.test.ts",["public Open Immune surfaces teach native Scaniom","every D00-D12 and Flagship README","internal engineering guide freezes acceptance"]);
+
+// VISUAL / NATIVE ONBOARDING V2.
+need("README.md",["OPEN IMMUNE  ×  SCANIOM IMMUNE FABRIC","## Install the released Scaniom CLI","r18-standalone-$SCANIOM_TARGET.tar.gz","SHA256SUMS","## Your names, not our demo names","YOUR_NODE_NAME","scaniom node list","```mermaid"]);
+need("docs/start-here.md",["## Install the released Scaniom CLI","YOUR_NODE_NAME","scaniom env list","scaniom workload list","scaniom node list"]);
+need("docs/PUBLIC-EXPERIENCE-RUNBOOK.md",["Install the standalone CLI","YOUR_NODE_NAME","Example only","```mermaid"]);
+need("docs/LAB-COMMAND-MATRIX.md",["YOUR_NODE_NAME","YOUR_WORKLOAD","YOUR_ENVIRONMENT","Never copy angle-bracket placeholders"]);
+reject("README.md",["--node prod-ai-01","--workload customer-agent"]);
+reject("docs/start-here.md",["--node prod-ai-01","--workload customer-agent"]);
+need("app/docs/page.tsx",["YOUR_NODE_NAME=\"prod-ai-01\"","Example names are not pre-created names","SCANIOM_INSTALL_ROOT"]);
+for(const rel of ["d00-account-auth","d01-public-install","d02-l1-full-cycle","d03-l2-agent-sdk","d04-l4-sidecar","d05-l3-model-runtime","d06-l5-environment-gateway","d07-mcp-gateway","d08-l6-provider-native","d09-fleet-failover","d10-offline-continuity","d11-multi-provider","d12-immunex","flagship-full-fabric"]){need(`demos/${rel}/README.md`,["```mermaid","PUBLIC / NATIVE SCANIOM","INTERNAL / ACCEPTANCE"]);}
+
+// COMPLETE REPO DOCS / SYSTEM BLUEPRINT V3.
+need("demos/d07-mcp-gateway/README.md",["real Streamable HTTP MCP","Gate executes **before** `tools/call`","pre + post"]);
+need("demos/d08-l6-provider-native/README.md",["synthetic guard only","cannot close D08","pre + post","VALID L6 correlated proof"]);
+need("demos/d09-fleet-failover/README.md",["two real Scaniom Nodes","pre_dispatch_health_failover_no_ambiguous_replay","Control D3","runtime URLs"]);
+need("docs/SYSTEM-BLUEPRINTS.md",["AI SaaS Operations Center","Robot Fleet","Autonomous Lanes","AI Inference Factory","IFOC — Full Immune Fabric Operations Center"]);
+for(const rel of ["system-saas","system-robots","system-lanes","system-factory","system-ifoc"]){need(`docs/system-blueprints/${rel}.md`,["SYSTEM BLUEPRINT · PUBLIC / NATIVE SCANIOM","```mermaid","## Build sequence"]);}
+need("README.md",["## Complete Open Immune catalog","AI SaaS Operations Center","Robot Fleet","Autonomous Lanes","AI Inference Factory","IFOC — Full Immune Fabric Operations Center","docs/SYSTEM-BLUEPRINTS.md"]);
+need("app/docs/page.tsx",["SYSTEM BLUEPRINT RUNBOOKS","docs-system-blueprint-grid","systemBlueprints.map","lab.steps.map"]);
+reject("app/docs/page.tsx",["bash demos/","run.sh"]);
+need("tests/documentation-completeness-v3.test.ts",["all five Web System Blueprints have first-class repo guidebooks","D07/D08/D09 preserve accepted execution semantics"]);
+
 if(errors.length){console.error("OPEN IMMUNE INTELLIGENCE SOURCE AUDIT FAIL");for(const error of errors)console.error(`- ${error}`);process.exit(1);}
 
+need("demos/d10-offline-continuity/run.sh",["require_open_immune_authority","control-relay.mjs","--attachments l1,l2,l3,l4,l5,mcp,l6","scaniom-runtime-adapter.mjs","scaniom-gateway.mjs","scaniom-environment-gateway.mjs","scaniom-mcp-gateway.mjs","scaniom-provider-native-bridge.mjs","OFFLINE-PROTECTED","14 unique consequences","matrix-verify.mjs","D10 FULL SEVEN-BOUNDARY OFFLINE CONTINUITY PASS"]);
+need("demos/d10-offline-continuity/control-relay.mjs",["open-immune-d10-control-relay","127.0.0.1","request.pipe(upstream)","upstreamResponse.pipe(response)","rejectUnauthorized: true"]);
+need("demos/d10-offline-continuity/consequence-service.mjs",["open-immune-d10-consequence","/v1/responses","/mcp","appendFileSync","contentStored:false"]);
+need("demos/d10-offline-continuity/matrix-client.mjs",['from "@scaniom/sdk"',"guardAction","tools/call","provider-native://open-immune/d10","x-scaniom-connection-id"]);
+need("demos/d10-offline-continuity/matrix-verify.mjs",["provider_proxy","sdk","runtime_hook","sidecar","gateway","mcp_gateway","provider_native"]);
+need("demos/d10-offline-continuity/README.md",["L1 and L4 use the real provider-proxy runtime semantics","fourteen unique consequences","does **not** wait four hours"]);
+need("lib/open-ii/local-execution.ts",["version: 2","allSevenIdentityScopes","allSevenTrajectories","allSevenProofs","noReplay"]);
+need("lib/open-ii/types.ts",["OperatorOfflineContinuityState","d10OfflineContinuity","allSevenProofs"]);
+console.log("✓ D10 proves signed B2 last-known-good continuity across L1/L2/L3/L4/L5/MCP/L6, fail-closed new authority, bounded replay and seven signed proofs");
 console.log("OPEN IMMUNE INTELLIGENCE SOURCE AUDIT PASS");
 console.log("✓ canonical Cloud Control + OIS Auth terminology");
 console.log("✓ public R18 / 0.4.2 release status + accepted fallback");
@@ -119,7 +181,18 @@ console.log("✓ D01 local execution receipt is credential-free and emitted only
 console.log("✓ D02 signed-proof completion comes from existing Scaniom operator proof authority");
 console.log("✓ D03 executes released TypeScript + Python SDKs with shared B1 runtime identity, L2 evidence and attachment-specific signed proof");
 console.log("✓ D05 L3 verifies live model-runtime inventory, explicit L3 identity, runtime_hook evidence and attachment-specific signed proof");
+console.log("✓ D07 MCP verifies explicit MCP identity, Gate-before-tools/call, real upstream consequence, mcp_gateway pre/post trajectory and signed proof");
+console.log("✓ D08 L6 executes a real custom adapter consequence between provider_native pre-Gate and post-observe, then verifies L6 signed proof");
+console.log("✓ D09 proves D1/D2/D3 pool binding, deterministic routing, pre-dispatch health failover, no replay and signed before/after evidence");
 console.log("✓ Web↔CLI parity uses a local one-time browser challenge; no browser token or CLI credential is shared");
 console.log("✓ all real Labs use the installed source-independent R18/0.4.2 scaniom command from PATH");
 console.log("✓ Node/policy/provider/attachment/behavior state verifies only from live Scaniom Control evidence");
 console.log("✓ public repo remains independent from private Scaniom source");
+console.log("✓ all five Web System Blueprints have first-class native repo runbooks");
+console.log("✓ D07/D08/D09 accepted execution semantics survived visual documentation changes");
+console.log("✓ root + Web Start A-Z expose the complete Labs + System Blueprint catalog");
+console.log("✓ root/onboarding docs include verified standalone CLI installation and explicit user-owned Node/workload/environment names");
+console.log("✓ README/Lab books use branded Mermaid architecture flows while public commands remain native Scaniom");
+console.log("✓ public/native Lab docs are manifest-driven and never require repository run.sh harnesses");
+console.log("✓ D00-D12 + Flagship READMEs separate public learning from internal acceptance");
+console.log("✓ internal engineering/release guide freezes acceptance, receipt, and explicit GitHub authorization rules");

@@ -218,11 +218,128 @@ function ResolvedRuntimeValues({ context, lab }: { context: OpenIiContextRespons
 }
 
 
+
+function ProviderNativeReality({ context }: { context: OpenIiContextResponse }) {
+  const level = context.attachments?.levels?.find((item) => String(item.id || item.level || "").toLowerCase() === "l6") || null;
+  const evidence = Number(level?.evidence?.total || 0);
+  const configured = level?.configured === true;
+  const ready = level?.ready === true;
+  return <section className={styles.providerInspectorBlock} aria-label="L6 provider-native authority">
+    <div className={styles.providerAuthorityStack}>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="code" size={18}/></span>
+        <div><small>REAL PROVIDER / RUNTIME ADAPTER</small><b>Adapter owns the legitimate consequence</b></div>
+      </div>
+      <div className={styles.providerAuthorityConnector} aria-hidden="true"><span/></div>
+      <div className={styles.providerAuthorityCard}>
+        <span className={styles.providerAuthorityIcon}><StackIcon kind="scaniom" size={18}/></span>
+        <div><small>SCANIOM L6</small><b>Guard before consequence · observe after outcome</b></div>
+      </div>
+    </div>
+    <div className={styles.providerRoutesPanel}>
+      <div className={styles.providerRoutesTitle}>REAL L6 STATE FROM SCANIOM CONTROL</div>
+      <div className={styles.providerRouteRows}>
+        <div className={styles.providerRouteRow}>
+          <span className={styles.providerRouteIcon}><StackIcon kind="shield" size={17}/></span>
+          <div><small>{configured ? "ADAPTER REGISTERED" : "ADAPTER NOT REGISTERED"} · {ready ? "FABRIC READY" : "FABRIC NOT READY"}</small><b>{evidence} provider-native behavior event{evidence === 1 ? "" : "s"} / 24h</b><em>Evidence source: provider_native · proof level: L6</em></div>
+        </div>
+      </div>
+      <p className={styles.providerRoutesNote}>The generic bridge never dispatches a vendor consequence. A legitimate provider/runtime adapter must call L6 guard, perform the consequence only when permitted, then call observe with the pre-behavior parent. Raw prompt/content stays outside the generic bridge.</p>
+    </div>
+  </section>;
+}
+
+
+function FleetFailoverReality({ context }: { context: OpenIiContextResponse }) {
+  const workloadId = context.workspace?.workloadId;
+  const workload = (context.fabric?.workloads || []).find((item) => item.id === workloadId) || null;
+  const binding = workload?.poolBindings?.[0] || null;
+  const pool = (context.fabric?.nodePools || []).find((item) => item.id === binding?.poolId)
+    || (context.fabric?.nodePools || []).find((item) => Number(item.memberCount || 0) >= 2)
+    || null;
+  const routing = workload?.routing || null;
+  const receipt = context.execution?.d09FleetFailover || null;
+  const members = pool?.members || [];
+
+  return <section className={styles.providerInspectorBlock} aria-label="D09 fleet and failover authority">
+    <div className={styles.providerValuePanel}>
+      <div className={styles.providerValueHeading}>
+        <div><small>D1 · D2 · D3 FABRIC</small><b>One workload identity. Multiple machine authorities. Health-aware selection.</b></div>
+        <span>{members.length} NODE{members.length === 1 ? "" : "S"} · {routing?.readyCandidates || 0} READY</span>
+      </div>
+      <div className={styles.providerRouteRows}>
+        {members.map((member) => <div className={styles.providerRouteRow} key={member.nodeId}>
+          <span className={styles.providerRouteIcon}><StackIcon kind="server" size={17}/></span>
+          <div><small>{String(member.state || "unknown").toUpperCase()} · {String(member.routingState || "active").toUpperCase()} · w{member.routingWeight || 100}</small><b>{member.name || member.nodeId}</b><em>{member.runtimeEndpoint || "runtime endpoint not declared"}</em></div>
+        </div>)}
+      </div>
+    </div>
+    <div className={styles.providerRoutesPanel}>
+      <div className={styles.providerRoutesTitle}>REAL ROUTING FROM SCANIOM CONTROL</div>
+      <div className={styles.providerRouteRows}>
+        <div className={styles.providerRouteRow}>
+          <span className={styles.providerRouteIcon}><StackIcon kind="shield" size={17}/></span>
+          <div><small>{binding ? `BOUND · ${binding.poolName || binding.poolSlug || binding.poolId}` : "WORKLOAD NOT BOUND"} · {routing?.redundant ? "REDUNDANT" : "NOT REDUNDANT"}</small><b>{routing?.selectedNodeId ? `Selected ${routing.selectedNodeId}` : "No routable selection yet"}</b><em>{routing?.retryPolicy || "pre-dispatch routing not configured"}</em></div>
+        </div>
+        <div className={styles.providerRouteRow}>
+          <span className={styles.providerRouteIcon}><StackIcon kind="code" size={17}/></span>
+          <div><small>{receipt ? "REAL FAILOVER VERIFIED" : "FAILOVER NOT YET VERIFIED"}</small><b>{receipt ? `${receipt.failedNodeId} → ${receipt.failoverNodeId}` : "Run the D09 health-failure flow"}</b><em>{receipt ? `${receipt.correlationId} · ${receipt.proofId}` : "Open Immune closes only from the real failover receipt + Scaniom proof."}</em></div>
+        </div>
+      </div>
+      <p className={styles.providerRoutesNote}>Control D3 ranks persisted Node identities. Released SDK/gateways rank configured runtime URLs and probe health before dispatch. D09 proves both surfaces without claiming the two identifiers always produce the same first-ranked member for one literal key.</p>
+    </div>
+  </section>;
+}
+
+
+function OfflineContinuityReality({ context }: { context: OpenIiContextResponse }) {
+  const receipt = context.execution?.d10OfflineContinuity || null;
+  const contract = context.offlineContinuity?.contract || null;
+  const environmentId = context.workspace?.environmentId;
+  const item = (context.offlineContinuity?.items || []).find((candidate) => candidate.nodeId === receipt?.nodeId)
+    || (context.offlineContinuity?.items || []).find((candidate) => candidate.environmentId === environmentId)
+    || null;
+  const windowHours = Math.round(Number(contract?.maxOfflineSeconds || 0) / 3600);
+  const graceMinutes = Math.round(Number(contract?.maxCredentialStaleSeconds || 0) / 60);
+  const spoolMiB = Math.round(Number(contract?.maxSpoolBytes || 0) / 1024 / 1024);
+  const rows = [
+    ["l1", "L1 API Route", "provider_proxy"], ["l2", "L2 SDK", "sdk"], ["l3", "L3 Model Runtime", "runtime_hook"],
+    ["l4", "L4 Sidecar", "sidecar"], ["l5", "L5 Environment Gateway", "gateway"], ["mcp", "MCP Gateway", "mcp_gateway"], ["l6", "L6 Provider Native", "provider_native"],
+  ] as const;
+  const verified = receipt ? rows.filter(([id]) => Boolean(receipt.boundaries?.[id]?.proofId)).length : 0;
+  const proofSummary = verified === 7 ? "7/7 PROOFS" : `${verified}/7 PROOFS`;
+
+  return <section className={styles.providerInspectorBlock} aria-label="D10 seven-boundary offline runtime continuity">
+    <div className={styles.providerValuePanel}>
+      <div className={styles.providerValueHeading}>
+        <div><small>R18-B2 · FULL IMMUNE FABRIC</small><b>Control can disappear. Seven attachment boundaries keep bounded signed protection.</b></div>
+        <span>{proofSummary} · {windowHours || 0}H · {graceMinutes || 0}M</span>
+      </div>
+      <div className={styles.providerRouteRows}>
+        {rows.map(([id,label,source]) => {
+          const row = receipt?.boundaries?.[id];
+          return <div className={styles.providerRouteRow} key={id}>
+            <span className={styles.providerRouteIcon}><StackIcon kind="shield" size={17}/></span>
+            <div><small>{source.toUpperCase()} · {row ? `${row.eventCount} EVENTS` : "PENDING"}</small><b>{label} · {row ? "OFFLINE + REPLAY VERIFIED" : "REAL EXECUTION REQUIRED"}</b><em>{row?.proofId || "No D10 v2 attachment proof yet"}</em></div>
+          </div>;
+        })}
+      </div>
+    </div>
+    <div className={styles.providerRoutesPanel}>
+      <div className={styles.providerRoutesTitle}>BOUNDED CONTINUITY AUTHORITY</div>
+      <p className={styles.providerRoutesNote}>{item?.nodeName || receipt?.nodeName || "D10 continuity Node"} · {spoolMiB || 0} MiB spool · unknown authority {String(contract?.unknownAuthority || "deny").toUpperCase()} · OFFLINE BOOTSTRAP {contract?.bootstrapWhileOffline ? "ALLOWED" : "DENIED"}. L1/L4 truthfully produce runtime events; L2/L3/L5/MCP/L6 produce guard/observe pairs. The acceptance does not fast-forward four hours or simulate lease expiry.</p>
+      <p className={styles.providerRoutesNote}>{receipt ? `${receipt.replayedEnvelopes} replayed envelope(s) · ${receipt.spoolPeakBytes} bytes peak · 14 unique online/offline consequences` : "Run D10 full matrix to produce the v2 receipt."}</p>
+    </div>
+  </section>;
+}
+
 function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextResponse; lab: LabManifest }) {
   const identity = context.runtimeIdentity?.identity || null;
   const attachments = (identity?.attachments || []).map((item) => String(item).toUpperCase()).join(" + ") || "—";
   const isL3 = lab.id === "d05-l3-model-runtime";
   const isL5 = lab.id === "d06-l5-environment-gateway";
+  const isMcp = lab.id === "d07-mcp-gateway";
+  const isL6 = lab.id === "d08-l6-provider-native";
   const rows = identity ? [
     ["STATE", String(identity.status || "unknown").toUpperCase()],
     ["IDENTITY", identity.identityId || "—"],
@@ -237,6 +354,10 @@ function RuntimeIdentityReality({ context, lab }: { context: OpenIiContextRespon
       ? <p><b>L3 is an explicit least-privilege runtime-identity scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l3</code>. The L3 adapter exchanges that bootstrap for renewable <code>scn_ri_v1</code> authority before using <code>/v1/runtime/guard</code> and <code>/v1/runtime/observe</code>.</p>
       : isL5
         ? <p><b>L5 is an explicit least-privilege environment-gateway scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l5</code>. Every request through the shared environment ingress must still carry the originating workload authority; Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>
+        : isMcp
+          ? <p><b>MCP is an explicit least-privilege tool-boundary scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments mcp</code>. The MCP Gateway carries that workload authority into Gate before <code>tools/call</code> reaches the upstream server, then records post-observe lineage without exposing the token to Open Immune.</p>
+          : isL6
+        ? <p><b>L6 is an explicit least-privilege provider-native scope.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l6</code>. The provider/runtime adapter keeps its own adapter identity, asks the L6 bridge before consequence, and reports the outcome afterward. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>
         : <p><b>L2/L4 share the frozen B1 managed identity scope with L1.</b> Use <code>scaniom runtime identity bootstrap --workload &lt;workload&gt; --attachments l1,l2,l4</code> once per deployment bootstrap. Open Immune never receives the copy-once bootstrap or renewable <code>scn_ri_v1</code> token.</p>}
     </div>
   </div>;
@@ -253,6 +374,7 @@ function controlPathForStep(stepId: string, lab?: LabManifest): string {
   if (stepId === "node") return "/console/nodes";
   if (stepId === "policy") return "/console/policies";
   if (stepId === "runtime-identity") return "/console/settings/runtime-access";
+  if (["continuity", "offline-protected", "replay"].includes(stepId)) return "/console/settings/runtime-access";
   if (stepId === "provider") return lab?.id === "d05-l3-model-runtime" ? "/console/attachments" : "/console/connect";
   if (stepId.startsWith("attach-")) return "/console/attachments";
   if (stepId.includes("immunex")) return "/console/immunex";
@@ -695,7 +817,10 @@ export function OpenImmuneWorkbench() {
             {selectedStep.id === "provider" && lab.id !== "d05-l3-model-runtime" ? <ProviderReality context={context} onOpen={() => setGuideModalOpen(true)}/> : null}
             {selectedStep.id === "provider" && lab.id === "d05-l3-model-runtime" ? <ModelRuntimeReality context={context}/> : null}
             {context && lab.id === "d06-l5-environment-gateway" && selectedStep.id === "attach-l5" ? <EnvironmentGatewayReality context={context}/> : null}
-            {context && ["runtime-identity", "attach-l2", "attach-l3", "attach-l5"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
+            {context && lab.id === "d08-l6-provider-native" && selectedStep.id === "attach-l6" ? <ProviderNativeReality context={context}/> : null}
+            {context && lab.id === "d09-fleet-failover" && ["node-pool", "routing", "failover"].includes(selectedStep.id) ? <FleetFailoverReality context={context}/> : null}
+            {context && lab.id === "d10-offline-continuity" && ["continuity", "offline-protected", "replay"].includes(selectedStep.id) ? <OfflineContinuityReality context={context}/> : null}
+            {context && ["runtime-identity", "attach-l2", "attach-l3", "attach-l5", "attach-mcp"].includes(selectedStep.id) ? <RuntimeIdentityReality context={context} lab={lab}/> : null}
             {context && ["provider", "attach-l1", "attach-l3", "attach-l4", "attach-l5", "attach-mcp", "attach-l6"].includes(selectedStep.id) ? <ResolvedRuntimeValues context={context} lab={lab}/> : null}
 
             {guideOptions.length ? <div className={styles.guideSurface}>

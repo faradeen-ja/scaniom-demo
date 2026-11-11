@@ -66,3 +66,8 @@ Node, policy, provider route, attachment execution, real traffic, Gate, trajecto
 - suggested environment/workload names.
 
 This keeps one workbench shell instead of hardcoding a different UI for every Lab.
+
+
+## Complete catalog documentation contract
+
+The public documentation surface covers both focused Labs (D00-D12 + Flagship) and all five System Blueprints. System Blueprint definitions remain manifest-owned in `lib/open-ii/labs.ts`, are rendered by Workbench and Web Start A-Z, and have repo guidebooks under `docs/system-blueprints/`. They do not introduce a second execution engine or a public `run.sh` path.

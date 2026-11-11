@@ -4,7 +4,7 @@ export type LabKind = "lab" | "system";
 export type LabStepStatus = "verified" | "ready" | "locked";
 export type LabCompletion =
   | "profile" | "identity" | "organization" | "environment" | "workload"
-  | "address" | "node" | "policy" | "runtimeIdentity" | "runtimeTarget" | "provider" | "attachment" | "behavior" | "proof" | "external";
+  | "address" | "node" | "nodePool" | "policy" | "runtimeIdentity" | "runtimeTarget" | "provider" | "attachment" | "routing" | "failover" | "continuity" | "offlineContinuity" | "replay" | "behavior" | "proof" | "external";
 export type LabStepGroup = "authority" | "fabric" | "runtime" | "evidence";
 
 export type LabGuideOption = {
@@ -330,8 +330,9 @@ SCANIOM_NATIVE_IDENTITY_TOKEN_FILE=/var/run/scaniom-native/token
   return liveStep("attachment", { ...base,
     detail: "Use the L6 provider-native framework so an adapter asks Scaniom before a privileged provider/runtime consequence and observes the outcome afterward.",
     surface: "Provider/runtime adapter integration",
-    artifacts: ["provider-native adapter", "L6-scoped runtime identity", "metadata-minimized guard context"],
+    artifacts: ["provider-native adapter", "L6-scoped runtime identity", "metadata-minimized guard context", "real consequence + post-observe integration"],
     commands: ["scaniom attach l6 --workload {{workload}} --provider {{provider}} --adapter <adapter> --hook <family> --port 8794 --run", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l6", "SCANIOM_RUNTIME_TOKEN=<l6-token> scaniom attach test l6 --workload {{workload}} --provider {{provider}} --adapter <adapter> --event <event>", "scaniom attach status --workload {{workload}}"],
+    notes: ["`scaniom attach test l6` is a released guard-only connectivity check. Real D08 completion requires the provider/runtime adapter to execute its legitimate consequence only after Gate permits and then call observe with the pre-behavior parent.", "The generic L6 bridge rejects raw prompt/content fields and never owns or retries provider-specific consequence dispatch."],
     guideOptions: [
       { id: "custom", label: "Custom adapter", icon: "code", kicker: "GUARD / OBSERVE", description: "Call the L6 bridge before the provider/runtime-native consequence and report outcome afterward.", surface: "Provider/runtime integration code", flow: ["Adapter", "L6 guard", "Node/Gate", "Consequence", "Observe"], commands: ["scaniom attach l6 --workload {{workload}} --provider {{provider}} --adapter <adapter> --hook custom --port 8794 --run", "scaniom runtime identity bootstrap --workload {{workload}} --attachments l6", "SCANIOM_RUNTIME_TOKEN=<l6-token> scaniom attach test l6 --workload {{workload}} --provider {{provider}} --adapter <adapter> --event <event>"] },
       { id: "provider", label: "Provider bridge", icon: "api", kicker: "PROVIDER-NATIVE", description: "Use a provider-specific adapter that honors Scaniom's metadata-only guard-before/observe-after contract.", surface: "Provider integration / internal framework", flow: ["Provider hook", "L6 bridge", "Gate", "Provider consequence"], commands: ["scaniom attach l6 --workload {{workload}} --provider {{provider}} --adapter <adapter> --hook <family> --port 8794 --run", "scaniom runtime identity status --workload {{workload}}"] },
@@ -416,6 +417,81 @@ function runtimeSteps(attachments: string[], providers: string[], options: { mul
   return steps;
 }
 
+
+function d09Steps(): LabStep[] {
+  return [
+    ...authoritySteps(),
+    ...scopeSteps(),
+    liveStep("address", { id: "address", label: "Scaniom Address", eyebrow: "WORKLOAD IDENTITY", group: "fabric", depth: 1, dependsOn: ["workload"], detail: "Use the selected workload's signed Scaniom Address before binding machine authority.", why: "Node failover must preserve one workload identity rather than creating one identity per Node.", surface: "Scaniom Control / CLI", commands: ["scaniom address issue --workload {{workload}} --ttl 24", "scaniom workload show"] }),
+    liveStep("nodePool", { id: "node-pool", label: "Two-Node pool", eyebrow: "D1 · MACHINE DOMAIN", group: "fabric", depth: 1, dependsOn: ["address"], detail: "Run at least two real Nodes and place them in one persisted D1 Node pool. Two members are the minimum topology needed to prove redundancy and failover.", why: "D1 turns individual Nodes into an explicit machine-authority domain with membership, eligibility and capacity state.", surface: "Node hosts / VM / Docker / Kubernetes + Scaniom Control", artifacts: ["2+ real enrolled Nodes", "persisted Node pool", "eligible members"], commands: ["scaniom node list", "scaniom fabric pools --env {{environment}}", "scaniom fabric pool create --env {{environment}} --name open-immune-d09-pool --desired 2 --min 1 --max 5 --capabilities l1,l2,l4 --nodes <node-a>,<node-b>", "scaniom fabric pool members --env {{environment}} --pool open-immune-d09-pool --nodes <node-a>,<node-b>"], notes: ["The reference harness reuses the existing primary Node and creates at most one D09-owned local secondary Node. Production pools may contain more members."] }),
+    liveStep("policy", { id: "policy", label: "Environment policy", eyebrow: "GATE POLICY", group: "fabric", depth: 1, dependsOn: ["node-pool"], detail: "Keep one immutable environment policy authoritative across every Node in the pool.", why: "Failover changes the machine executing Gate, not the workload's policy authority.", surface: "Scaniom Control / CLI", commands: ["scaniom policy list", "scaniom policy set --env {{environment}} --mode enforce --profile general"] }),
+    liveStep("runtimeIdentity", { id: "runtime-identity", label: "Shared B1 runtime identity", eyebrow: "NODE-INDEPENDENT AUTHORITY", group: "runtime", depth: 0, dependsOn: ["policy"], detail: "Use the frozen shared L1/L2/L4 scn_ri_v1 workload authority across every eligible Node.", why: "A workload must be able to move between healthy Nodes without minting a separate identity per machine.", surface: "Scaniom Control / CLI / runtime secret or native workload identity", artifacts: ["active runtime identity", "L1 + L2 + L4 scope"], commands: ["scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l4", "scaniom runtime identity status --workload {{workload}}"], notes: ["Open Immune never stores the copy-once bootstrap or renewable runtime token."] }),
+    liveStep("routing", { id: "routing", label: "Workload → pool → routing", eyebrow: "D2 + D3", group: "runtime", depth: 1, dependsOn: ["runtime-identity"], detail: "Bind the workload to the pool, assign credential-free runtime endpoints, and inspect the deterministic weighted-rendezvous plan.", why: "Node count alone is not failover authority. The workload needs persisted pool binding plus routable, eligible candidates.", surface: "Scaniom Control / released CLI", artifacts: ["D2 workload-pool binding", "runtime endpoints", "D3 ready candidates", "deterministic route key"], commands: ["scaniom fabric workload pools --workload {{workload}} --pools open-immune-d09-pool", "scaniom fabric routing node --env {{environment}} --pool open-immune-d09-pool --node <node> --endpoint <node-runtime-url> --state active --weight 100", "scaniom fabric routing preview --workload {{workload}} --key open-immune-session", "scaniom fabric routing env --workload {{workload}} --key open-immune-session"], notes: ["D3 failover is pre-dispatch. Provider-executing POST requests are never blindly replayed after an ambiguous dispatch failure."] }),
+    liveStep("failover", { id: "failover", label: "Health-aware failover", eyebrow: "REAL FAILURE + RECOVERY", group: "runtime", depth: 1, dependsOn: ["routing"], detail: "Execute one protected action, make a non-primary Node unavailable, execute a new action through the same multi-Node client, then restore the member.", why: "The Lab must prove protection continues through a routing change rather than merely showing a static pool.", surface: "Node runtime + released @scaniom/sdk + Scaniom Control", artifacts: ["physical Node health loss", "surviving Node selection", "no replay", "restored redundant pool"], commands: ["scaniom fleet --env {{environment}}", "scaniom fabric routing preview --workload {{workload}}", "scaniom trajectory list --limit 100"], notes: ["The reference harness stops only its D09-owned secondary Node. It never kills or re-enrolls the existing primary Node.", "The two protected actions are explicit before/after actions. The first consequence is never replayed."] }),
+    liveStep("behavior", { id: "behavior", label: "Before + after trajectory", eyebrow: "E1 · CONTINUED PROTECTION", group: "evidence", depth: 0, dependsOn: ["failover"], detail: "Inspect one correlated L2 trajectory containing pre/post evidence before failure and pre/post evidence after failover.", why: "One trajectory demonstrates that the same workload/session remained governed while machine routing changed.", surface: "Open Immune + Scaniom CLI", commands: ["scaniom live --env {{environment}} --workload {{workload}} --limit 30", "scaniom trajectory list --limit 100"] }),
+    liveStep("proof", { id: "proof", label: "Signed failover proof", eyebrow: "E2 · VERIFIABLE HISTORY", group: "evidence", depth: 1, dependsOn: ["behavior"], detail: "Verify the correlated signed proof covering the four L2 events across the routing change.", why: "D09 closes from verifiable runtime evidence plus a scope-bound local failover receipt, not from a button click.", surface: "Scaniom Control / CLI", commands: ["scaniom proof correlated list --limit 50", "scaniom proof correlated verify <correlation-id>"] }),
+  ];
+}
+
+function d09Topology(): LabManifest["topology"] {
+  return {
+    nodes: [
+      { id: "control", label: "Scaniom Control", eyebrow: "AUTHORITY", x: 50, y: 7, stepId: "profile", tone: "control" },
+      { id: "environment", label: "Environment", eyebrow: "POLICY SCOPE", x: 50, y: 20, stepId: "environment", tone: "environment" },
+      { id: "workload", label: "Workload", eyebrow: "IDENTITY", x: 50, y: 33, stepId: "workload", tone: "workload" },
+      { id: "pool", label: "D1 Node Pool", eyebrow: "MACHINE DOMAIN", x: 50, y: 48, stepId: "node-pool", tone: "node" },
+      { id: "node-a", label: "Node A", eyebrow: "PRIMARY / SURVIVOR", x: 34, y: 64, stepId: "node-pool", tone: "node" },
+      { id: "node-b", label: "Node B", eyebrow: "FAILOVER MEMBER", x: 66, y: 64, stepId: "node-pool", tone: "node" },
+      { id: "routing", label: "D2 + D3 Routing", eyebrow: "WEIGHTED RENDEZVOUS", x: 50, y: 78, stepId: "routing", tone: "attachment" },
+      { id: "evidence", label: "Trajectory + Proof", eyebrow: "BEFORE + AFTER", x: 50, y: 92, stepId: "behavior", tone: "evidence" },
+    ],
+    edges: [{ from: "control", to: "environment" }, { from: "environment", to: "workload" }, { from: "workload", to: "pool" }, { from: "pool", to: "node-a" }, { from: "pool", to: "node-b" }, { from: "node-a", to: "routing" }, { from: "node-b", to: "routing" }, { from: "routing", to: "evidence" }],
+  };
+}
+
+
+function d10Steps(): LabStep[] {
+  return [
+    ...authoritySteps(),
+    ...scopeSteps(),
+    liveStep("address", { id: "address", label: "Scaniom Address", eyebrow: "WORKLOAD IDENTITY", group: "fabric", depth: 1, dependsOn: ["workload"], detail: "Keep one signed workload identity stable before Control reachability changes.", why: "Offline continuity preserves previously authenticated authority; it does not create a second identity system.", surface: "Scaniom Control / CLI", commands: ["scaniom address issue --workload {{workload}} --ttl 24", "scaniom workload show"] }),
+    liveStep("node", { id: "node", label: "D10 continuity Node", eyebrow: "MACHINE-SPEED ENFORCEMENT", group: "fabric", depth: 1, dependsOn: ["address"], detail: "Use one D10-owned released Node. Existing primary/fleet Nodes are never interrupted.", why: "The same Node must survive Control loss and reconnect without restart.", surface: "Scaniom Node runtime", commands: ["scaniom node list", "scaniom node health"] }),
+    liveStep("policy", { id: "policy", label: "Last-known-good policy", eyebrow: "SIGNED POLICY", group: "fabric", depth: 1, dependsOn: ["node"], detail: "Synchronize enforce/general policy before isolation.", why: "B2 continues only authenticated cached policy/config inside the signed lease.", surface: "Scaniom Control / CLI", commands: ["scaniom policy list", "scaniom policy set --env {{environment}} --mode enforce --profile general"] }),
+    liveStep("runtimeIdentity", { id: "runtime-identity", label: "All-seven runtime identity", eyebrow: "EXPLICIT PRE-ISOLATION AUTHORITY", group: "runtime", depth: 0, dependsOn: ["policy"], detail: "Issue one scn_ri_v1 generation before isolation with L1/L2/L3/L4/L5/MCP/L6 enabled. L1/L2/L4 remain B1 defaults; L3/L5/MCP/L6 are explicit opt-ins.", why: "Every boundary must use already-issued authority offline. D10 never mints a new identity after Control disappears.", surface: "Scaniom Control / CLI / runtime secret", commands: ["scaniom runtime identity bootstrap --workload {{workload}} --attachments l1,l2,l3,l4,l5,mcp,l6", "scaniom runtime identity status --workload {{workload}}"] }),
+    liveStep("continuity", { id: "continuity", label: "Signed B2 continuity window", eyebrow: "4H · 30M · 256 MIB", group: "runtime", depth: 1, dependsOn: ["runtime-identity"], detail: "Verify the Node-scoped signed B2 lease, cached route, policy and all-seven runtime identity before cutting Control transport.", why: "Offline protection is bounded cryptographic authority, not an availability bypass.", surface: "Scaniom Control / released CLI", commands: ["scaniom runtime continuity --env {{environment}}", "scaniom node health"] }),
+    liveStep("offlineContinuity", { id: "offline-protected", label: "Seven-boundary OFFLINE-PROTECTED matrix", eyebrow: "L1 · L2 · L3 · L4 · L5 · MCP · L6", group: "runtime", depth: 1, dependsOn: ["continuity"], detail: "Keep the Node and released runtime boundaries alive while only Node→Control transport is removed. Execute one real protected consequence independently through every frozen attachment boundary.", why: "A representative L2 request is not enough to prove full Immune Fabric continuity.", surface: "Released 0.4.2 runtime boundaries", artifacts: ["L1 provider_proxy", "L2 sdk", "L3 runtime_hook", "L4 sidecar", "L5 gateway", "MCP mcp_gateway", "L6 provider_native"], commands: ["scaniom runtime continuity --env {{environment}}", "scaniom node health"], notes: ["New one-time bootstrap must return fail-closed while offline."] }),
+    liveStep("replay", { id: "replay", label: "Reconnect + seven-stream replay", eyebrow: "ORDERED · IDEMPOTENT", group: "runtime", depth: 1, dependsOn: ["offline-protected"], detail: "Restore the same Control path without restarting Node or attachment processes, drain the bounded spool and converge every attachment trajectory.", why: "Continuity is incomplete until offline evidence rejoins Control history without re-executing consequences.", surface: "Scaniom Node + Control", artifacts: ["zero pending spool", "lastEvidenceReplayAt", "14 unique consequences"], commands: ["scaniom runtime continuity --env {{environment}}", "scaniom trajectory list --limit 100"] }),
+    liveStep("behavior", { id: "behavior", label: "Seven attachment trajectories", eyebrow: "E1 · FULL IMMUNE FABRIC", group: "evidence", depth: 0, dependsOn: ["replay"], detail: "Inspect seven independent correlations. L1/L4 have two real runtime events (online + offline); L2/L3/L5/MCP/L6 have online + offline pre/post pairs.", why: "The evidence semantics remain truthful to each boundary instead of manufacturing uniform event shapes.", surface: "Open Immune + Scaniom CLI", commands: ["scaniom trajectory list --limit 100"] }),
+    liveStep("proof", { id: "proof", label: "Seven signed continuity proofs", eyebrow: "E2 · ATTACHMENT-SPECIFIC", group: "evidence", depth: 1, dependsOn: ["behavior"], detail: "Verify one valid correlated proof for each of L1/L2/L3/L4/L5/MCP/L6.", why: "Full D10 closes only when every boundary has real execution, replayed evidence and attachment-specific signed proof.", surface: "Scaniom Control / CLI", commands: ["scaniom proof correlated list --limit 50", "scaniom proof correlated verify <correlation-id>"] }),
+  ];
+}
+
+function d10Topology(): LabManifest["topology"] {
+  return {
+    nodes: [
+      { id: "control", label: "Scaniom Control", eyebrow: "SIGNING AUTHORITY", x: 50, y: 6, stepId: "profile", tone: "control" },
+      { id: "relay", label: "Control Transport", eyebrow: "CUT / RESTORE ONLY", x: 50, y: 17, stepId: "continuity", tone: "neutral" },
+      { id: "node", label: "D10 Scaniom Node", eyebrow: "STAYS RUNNING", x: 50, y: 29, stepId: "node", tone: "node" },
+      { id: "identity", label: "All-seven Identity + Policy", eyebrow: "SIGNED BEFORE OUTAGE", x: 50, y: 41, stepId: "runtime-identity", tone: "policy" },
+      { id: "l1", label: "L1 API Route", eyebrow: "PROVIDER PROXY", x: 10, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "l2", label: "L2 SDK", eyebrow: "SDK", x: 23, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "l3", label: "L3 Model Runtime", eyebrow: "RUNTIME HOOK", x: 36, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "l4", label: "L4 Sidecar", eyebrow: "SIDECAR", x: 50, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "l5", label: "L5 Environment", eyebrow: "GATEWAY", x: 64, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "mcp", label: "MCP Gateway", eyebrow: "TOOLS/CALL", x: 77, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "l6", label: "L6 Provider Native", eyebrow: "PROVIDER NATIVE", x: 90, y: 57, stepId: "offline-protected", tone: "attachment" },
+      { id: "spool", label: "Bounded Evidence Spool", eyebrow: "NODE-LOCAL", x: 34, y: 74, stepId: "replay", tone: "evidence" },
+      { id: "proof", label: "7 Trajectories + 7 Proofs", eyebrow: "REPLAYED HISTORY", x: 66, y: 74, stepId: "proof", tone: "evidence" },
+    ],
+    edges: [
+      { from: "control", to: "relay" }, { from: "relay", to: "node" }, { from: "node", to: "identity" },
+      { from: "identity", to: "l1" }, { from: "identity", to: "l2" }, { from: "identity", to: "l3" }, { from: "identity", to: "l4" }, { from: "identity", to: "l5" }, { from: "identity", to: "mcp" }, { from: "identity", to: "l6" },
+      { from: "l1", to: "spool" }, { from: "l2", to: "spool" }, { from: "l3", to: "spool" }, { from: "l4", to: "spool" }, { from: "l5", to: "spool" }, { from: "mcp", to: "spool" }, { from: "l6", to: "spool" },
+      { from: "spool", to: "proof" }, { from: "proof", to: "control" },
+    ],
+  };
+}
+
 function manifest(input: Omit<LabManifest, "steps" | "topology"> & { steps?: LabStep[]; topology?: LabManifest["topology"]; runtime?: { attachments?: string[]; multiNode?: boolean; multiProvider?: boolean; continuity?: boolean; immunex?: boolean; runtimeIdentity?: boolean; runtimeTarget?: boolean; includeTarget?: boolean } }): LabManifest {
   const { runtime, steps: providedSteps, topology: providedTopology, ...base } = input;
   const attachments = base.attachments;
@@ -443,10 +519,10 @@ const labs: LabManifest[] = [
   manifest({ id: "d04-l4-sidecar", code: "D04", kind: "lab", title: "L4 Sidecar", subtitle: "Protect an existing workload without rewriting every provider call.", summary: "Deploy the released Scaniom sidecar beside the real workload, preserve the shared B1 L1/L2/L4 runtime identity, route actual application traffic through the sidecar, and let live Scaniom sidecar evidence close the Lab automatically.", goal: "Finish with real L4 sidecar traffic, Gate/trajectory evidence and an L4/sidecar signed proof for the selected workload.", difficulty: "Intermediate", attachments: ["L4"], platforms: ["Docker", "Kubernetes", "VM", "Local development"], providers: ["OpenAI-compatible"], stacks: ["Scaniom Sidecar", "Existing app", "B1 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L4"], runtimeIdentity: true } }),
   manifest({ id: "d05-l3-model-runtime", code: "D05", kind: "lab", title: "L3 Model Runtime", subtitle: "Gate vLLM, NVIDIA NIM, Triton or compatible inference before execution.", summary: "Register the real inference runtime, opt the selected workload into L3 runtime identity, start the released runtime adapter beside the model server, then verify pre-inference Gate plus runtime_hook evidence and signed proof.", goal: "Finish with a real inference request that crosses L3 Gate before model execution and closes from selected-workload runtime_hook evidence.", difficulty: "Advanced", attachments: ["L3"], platforms: ["GPU Linux", "Docker", "Kubernetes"], providers: ["vLLM", "NVIDIA NIM", "NVIDIA Triton", "OpenAI-compatible runtime"], stacks: ["Model runtime", "L3 adapter", "explicit L3 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-model-runtime", runtime: { attachments: ["L3"], runtimeIdentity: true, runtimeTarget: true } }),
   manifest({ id: "d06-l5-environment-gateway", code: "D06", kind: "lab", title: "L5 Environment Gateway", subtitle: "Protect explicit environment ingress while preserving per-workload identity.", summary: "Deploy the released Scaniom Environment Gateway at a real cluster/VPC/private ingress, opt the selected workload into explicit L5 runtime authority, send real attributed traffic through the gateway, and close only from gateway evidence plus signed proof.", goal: "Finish with a real L5 request whose originating workload remains attributable through Gate, trajectory and attachment-specific signed proof.", difficulty: "Advanced", attachments: ["L5"], platforms: ["Kubernetes", "VM", "VPC/private network"], providers: ["Any configured provider"], stacks: ["Environment Gateway", "explicit L5 runtime identity", "workload attribution"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L5"], runtimeIdentity: true } }),
-  manifest({ id: "d07-mcp-gateway", code: "D07", kind: "lab", title: "MCP Gateway", subtitle: "Gate Streamable HTTP MCP tool calls before server/tool consequence.", summary: "Place the Scaniom MCP Gateway between a real MCP client/agent and MCP server while preserving server, session and tool lineage.", goal: "Run a real tools/call through the MCP boundary and inspect proof.", difficulty: "Advanced", attachments: ["MCP"], platforms: ["Node.js", "Docker", "Kubernetes"], providers: ["MCP server"], stacks: ["MCP", "Tools"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["MCP"] } }),
-  manifest({ id: "d08-l6-provider-native", code: "D08", kind: "lab", title: "L6 Provider Native", subtitle: "Guard immediately before a provider/runtime-native consequence.", summary: "Integrate the executable L6 bridge/framework into a real provider/runtime adapter using metadata-minimized guard-before/observe-after semantics.", goal: "Exercise a provider-native hook and verify its decision trail.", difficulty: "Advanced", attachments: ["L6"], platforms: ["Provider/runtime adapter", "Custom framework"], providers: ["Custom adapter"], stacks: ["L6 bridge"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L6"] } }),
-  manifest({ id: "d09-fleet-failover", code: "D09", kind: "lab", title: "Fleet + Failover", subtitle: "Multiple Nodes, one workload pool, deterministic routing and failover.", summary: "Build a small real Scaniom fabric across VM/Docker/Kubernetes Nodes and observe health-aware routing.", goal: "Bind the workload to a pool and verify routing/failover authority.", difficulty: "Advanced", attachments: ["L1", "L2", "L4"], platforms: ["VM", "Docker", "Kubernetes"], providers: ["Any configured provider"], stacks: ["Node pool", "Routing"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L1", "L2", "L4"], multiNode: true } }),
-  manifest({ id: "d10-offline-continuity", code: "D10", kind: "lab", title: "Offline Continuity", subtitle: "Remove Control reachability while Node protection continues from bounded last-known-good authority.", summary: "Exercise protected offline traffic, spool/replay and recovery rather than only the happy path.", goal: "Reach OFFLINE-PROTECTED, run real traffic, reconnect and confirm recovery.", difficulty: "Advanced", attachments: ["L1"], platforms: ["VM", "Docker", "Kubernetes", "Private"], providers: ["OpenAI-compatible"], stacks: ["Offline continuity", "Spool/replay"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L1"], continuity: true } }),
+  manifest({ id: "d07-mcp-gateway", code: "D07", kind: "lab", title: "MCP Gateway", subtitle: "Gate Streamable HTTP MCP tool calls before server/tool consequence.", summary: "Place the released Scaniom MCP Gateway between a real MCP client/agent and Streamable HTTP MCP server, opt the selected workload into explicit MCP runtime identity, execute a real tools/call, and preserve workload/server/session/tool lineage through pre-Gate and post-observe evidence.", goal: "Finish with one real MCP tools/call whose upstream consequence occurred only after Scaniom Gate permitted it, followed by selected-workload mcp_gateway pre/post trajectory and VALID MCP correlated proof.", difficulty: "Advanced", attachments: ["MCP"], platforms: ["Node.js", "Docker", "Kubernetes"], providers: ["MCP server"], stacks: ["Streamable HTTP MCP", "MCP Gateway", "explicit MCP runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["MCP"], runtimeIdentity: true } }),
+  manifest({ id: "d08-l6-provider-native", code: "D08", kind: "lab", title: "L6 Provider Native", subtitle: "Gate immediately before a legitimate provider/runtime-native consequence and observe the outcome afterward.", summary: "Integrate the released L6 bridge into a real custom provider/runtime adapter, preserve explicit adapter + workload identity, send metadata/digests only, execute one consequence only after Gate permits, and close from provider_native pre/post evidence plus signed proof.", goal: "Finish with one real adapter consequence whose L6 guard, post-observe parent lineage, trajectory and correlated proof are independently visible.", difficulty: "Advanced", attachments: ["L6"], platforms: ["Provider/runtime adapter", "Custom framework", "VM", "Docker", "Kubernetes"], providers: ["Custom provider-native adapter"], stacks: ["L6 bridge", "custom native adapter", "explicit L6 runtime identity"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L6"], runtimeIdentity: true, includeTarget: false } }),
+  manifest({ id: "d09-fleet-failover", code: "D09", kind: "lab", title: "Fleet + Failover", subtitle: "Two real Nodes, one persisted pool, deterministic routing and health-aware failover.", summary: "Build a real D1/D2/D3 Scaniom fabric, bind one workload identity to a redundant Node pool, prove deterministic Control routing, force one secondary Node down, continue protection through SDK pre-dispatch health failover, then restore redundancy.", goal: "Finish with a restored two-Node pool plus one signed trajectory proving protection before and after the routing change.", difficulty: "Advanced", attachments: ["L1", "L2", "L4"], platforms: ["Local/VM", "Docker", "Kubernetes"], providers: [], stacks: ["D1 Node pool", "D2 workload binding", "D3 health routing", "@scaniom/sdk@0.4.2"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", steps: d09Steps(), topology: d09Topology() }),
+  manifest({ id: "d10-offline-continuity", code: "D10", kind: "lab", title: "Offline Runtime Continuity", subtitle: "Keep the complete seven-boundary Immune Fabric protecting under bounded signed authority while Control is unreachable, then replay every evidence stream.", summary: "Prove R18-B2 across L1/L2/L3/L4/L5/MCP/L6 with one released D10 Node, one pre-isolation all-seven identity generation, real attachment-specific consequences, fail-closed new authority, bounded evidence buffering, reconnect/replay and seven signed proofs.", goal: "Finish with seven independent online+offline trajectories, seven valid correlated proofs and fourteen unique consequences with no execution replay.", difficulty: "Advanced", attachments: ["L1", "L2", "L3", "L4", "L5", "MCP", "L6"], platforms: ["Local/VM", "Docker", "Kubernetes", "Private"], providers: ["Provider-neutral · D10 loopback consequence target"], stacks: ["B2 last-known-good continuity", "Seven released runtime boundaries", "Evidence spool/replay", "E1/E2 proof matrix"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", steps: d10Steps(), topology: d10Topology() }),
   manifest({ id: "d11-multi-provider", code: "D11", kind: "lab", title: "Multi-provider", subtitle: "One workload identity across OpenAI, Anthropic, Gemini, Bedrock and custom/private routes.", summary: "Configure multiple Node-local BYOK provider credentials/routes while preserving one workload identity, Gate and trajectory.", goal: "Exercise multiple real provider routes and inspect one correlated trajectory.", difficulty: "Advanced", attachments: ["L1"], platforms: ["Node host", "Docker", "Kubernetes"], providers: ["OpenAI", "Anthropic", "Gemini", "Bedrock", "Custom / private"], stacks: ["Provider routing", "BYOK"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L1"], multiProvider: true } }),
   manifest({ id: "d12-immunex", code: "D12", kind: "lab", title: "Immunex", subtitle: "Run repeatable normal/adversarial behavior against the real Scaniom Runtime.", summary: "Use a real provider connection and released attachments while destructive consequences remain sandboxed.", goal: "Finish an Immunex scenario set and inspect Gate/trajectory/proof.", difficulty: "Advanced", attachments: ["L1", "L2", "L4"], platforms: ["Local", "Docker", "Kubernetes"], providers: ["Real provider connection"], stacks: ["Immunex"], suggestedEnvironment: "scaniom-demo-production", suggestedWorkload: "scaniom-demo-agent", runtime: { attachments: ["L1", "L2", "L4"], immunex: true } }),
   manifest({ id: "flagship-full-fabric", code: "FLAGSHIP", kind: "lab", title: "Full Immune Fabric", subtitle: "All seven boundaries, multi-Node, multi-provider, continuity and proof.", summary: "The complete public Open Immune engineering experience from public Scaniom install to all-boundary evidence.", goal: "Build and verify a complete multi-boundary Scaniom Immune Fabric.", difficulty: "Advanced", attachments: ["L1", "L2", "L3", "L4", "L5", "MCP", "L6"], platforms: ["VM", "Docker", "Kubernetes", "Managed K8s", "Private"], providers: ["OpenAI", "Anthropic", "Gemini", "Bedrock"], stacks: ["Node pool", "All attachments", "Continuity", "Proof"], suggestedEnvironment: "oi-fabric-production", suggestedWorkload: "oi-fabric-agent", runtime: { attachments: ["L1", "L2", "L3", "L4", "L5", "MCP", "L6"], multiNode: true, multiProvider: true, continuity: true } }),
@@ -509,7 +585,7 @@ function singleAttachmentEvidenceSource(lab: LabManifest): string | null {
   return ATTACHMENT_EVIDENCE_SOURCE[String(lab.attachments[0] || "").toLowerCase()] || null;
 }
 
-function runtimeIdentityVerified(context: OpenIiContextResponse, workloadId: string | null | undefined, requiredAttachment: "l2" | "l3" | "l4" | "l5"): boolean {
+function runtimeIdentityVerified(context: OpenIiContextResponse, workloadId: string | null | undefined, requiredAttachment: "l2" | "l3" | "l4" | "l5" | "mcp" | "l6" | "mcp" | "l6"): boolean {
   const identity = context.runtimeIdentity?.identity;
   const attachments = (identity?.attachments || []).map((item) => String(item).toLowerCase());
   if (!identity || identity.workloadId !== workloadId || String(identity.status || "").toLowerCase() !== "active" || !attachments.includes(requiredAttachment)) return false;
@@ -517,11 +593,14 @@ function runtimeIdentityVerified(context: OpenIiContextResponse, workloadId: str
   return true;
 }
 
-function requiredRuntimeIdentityAttachment(lab: LabManifest): "l2" | "l3" | "l4" | "l5" | null {
+function requiredRuntimeIdentityAttachment(lab: LabManifest): "l2" | "l3" | "l4" | "l5" | "mcp" | "l6" | null {
   if (lab.id === "d03-l2-agent-sdk") return "l2";
   if (lab.id === "d04-l4-sidecar") return "l4";
   if (lab.id === "d05-l3-model-runtime") return "l3";
   if (lab.id === "d06-l5-environment-gateway") return "l5";
+  if (lab.id === "d07-mcp-gateway") return "mcp";
+  if (lab.id === "d08-l6-provider-native") return "l6";
+  if (lab.id === "d09-fleet-failover") return "l2";
   return null;
 }
 
@@ -531,6 +610,90 @@ function l3RuntimeTargetVerified(context: OpenIiContextResponse, workloadId: str
     && runtime.status === "active"
     && Boolean(runtime.endpoint)
     && ["vllm", "nvidia_nim", "triton", "openai_compatible"].includes(runtime.kind)));
+}
+
+
+function d09SelectedFabricWorkload(context: OpenIiContextResponse, workloadId: string | null | undefined) {
+  if (!workloadId) return null;
+  return (context.fabric?.workloads || []).find((item) => item.id === workloadId) || null;
+}
+
+function d09NodePoolVerified(context: OpenIiContextResponse, environmentId: string | null | undefined): boolean {
+  if (!environmentId || context.fabric?.selectedEnvironmentId !== environmentId) return false;
+  return Boolean((context.fabric.nodePools || []).some((pool) => {
+    if (pool.status && pool.status !== "active") return false;
+    const members = pool.members || [];
+    const healthy = members.filter((member) => member.state === "online" && member.eligible === true);
+    return Number(pool.memberCount || 0) >= 2 && Number(pool.onlineCount || 0) >= 2 && Number(pool.eligibleCount || 0) >= 2 && healthy.length >= 2;
+  }));
+}
+
+function d09RoutingVerified(context: OpenIiContextResponse, environmentId: string | null | undefined, workloadId: string | null | undefined): boolean {
+  if (!d09NodePoolVerified(context, environmentId)) return false;
+  const workload = d09SelectedFabricWorkload(context, workloadId);
+  if (!workload) return false;
+  const pools = context.fabric?.nodePools || [];
+  const binding = (workload.poolBindings || []).find((item) => {
+    const pool = pools.find((candidate) => candidate.id === item.poolId);
+    return Boolean(pool && Number(item.workloadEligibleCount || 0) >= 2);
+  });
+  const routing = workload.routing;
+  const ready = (routing?.candidates || []).filter((item) => item.state === "ready" && Boolean(item.endpoint));
+  return Boolean(binding && routing?.version === "scaniom-r18-d3-health-routing-failover-v1" && routing.strategy === "weighted_rendezvous" && routing.ready === true && routing.failClosed === false && routing.redundant === true && Number(routing.readyCandidates || 0) >= 2 && routing.retryPolicy === "pre_dispatch_health_failover_no_ambiguous_replay" && ready.length >= 2);
+}
+
+function d09ReceiptVerified(context: OpenIiContextResponse, environmentId: string | null | undefined, workloadId: string | null | undefined): boolean {
+  const receipt = context.execution?.d09FleetFailover;
+  if (!receipt || receipt.environmentId !== environmentId || receipt.workloadId !== workloadId) return false;
+  const workload = d09SelectedFabricWorkload(context, workloadId);
+  if (!workload || !(workload.poolBindings || []).some((item) => item.poolId === receipt.poolId)) return false;
+  return receipt.status === "pass" && receipt.release === "R18" && receipt.scaniomVersion === "0.4.2" && receipt.failedNodeId !== receipt.failoverNodeId && receipt.correlationId.startsWith("scn_corr_") && receipt.proofId.startsWith("scn_cproof_") && Object.values(receipt.checks).every((value) => value === true);
+}
+
+
+function d10ContinuityContractVerified(context: OpenIiContextResponse, environmentId: string | null | undefined): boolean {
+  if (!environmentId) return false;
+  const state = context.offlineContinuity;
+  const contract = state?.contract;
+  if (!contract) return false;
+  return contract.mode === "last-known-good"
+    && Number(contract.maxOfflineSeconds) === 14400
+    && Number(contract.maxCredentialStaleSeconds) === 1800
+    && Number(contract.maxSpoolBytes) === 268435456
+    && contract.unknownAuthority === "deny"
+    && contract.bootstrapWhileOffline === false
+    && contract.evidenceReplayRequired === true;
+}
+
+function d10ReceiptVerified(context: OpenIiContextResponse, environmentId: string | null | undefined, workloadId: string | null | undefined): boolean {
+  const receipt = context.execution?.d10OfflineContinuity;
+  if (!receipt || receipt.version !== 2 || receipt.environmentId !== environmentId || receipt.workloadId !== workloadId) return false;
+  const item = (context.offlineContinuity?.items || []).find((candidate) => candidate.nodeId === receipt.nodeId && candidate.environmentId === environmentId);
+  const required = ["l1","l2","l3","l4","l5","mcp","l6"] as const;
+  const sources: Record<(typeof required)[number], string> = {l1:"provider_proxy",l2:"sdk",l3:"runtime_hook",l4:"sidecar",l5:"gateway",mcp:"mcp_gateway",l6:"provider_native"};
+  const minimum: Record<(typeof required)[number], number> = {l1:2,l2:4,l3:4,l4:2,l5:4,mcp:4,l6:4};
+  return Boolean(item)
+    && d10ContinuityContractVerified(context, environmentId)
+    && receipt.status === "pass"
+    && receipt.release === "R18"
+    && receipt.scaniomVersion === "0.4.2"
+    && receipt.maxOfflineSeconds === 14400
+    && receipt.maxCredentialStaleSeconds === 1800
+    && receipt.maxSpoolBytes === 268435456
+    && receipt.spoolPeakBytes > 0
+    && receipt.replayedEnvelopes > 0
+    && required.every((id) => receipt.identity.attachments.includes(id))
+    && required.every((id) => {
+      const row = receipt.boundaries[id];
+      return Boolean(row)
+        && row.level === id
+        && row.source === sources[id]
+        && row.correlationId.startsWith("scn_corr_")
+        && row.proofId.startsWith("scn_cproof_")
+        && row.eventCount >= minimum[id]
+        && row.onlineConsequenceId !== row.offlineConsequenceId;
+    })
+    && Object.values(receipt.checks).every((value) => value === true);
 }
 
 export function completionVerified(step: LabStep, context: OpenIiContextResponse, lab: LabManifest): boolean {
@@ -548,12 +711,23 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
       const online = (context.nodes || []).filter((item) => (item.environment_id || item.environmentId) === environmentId && item.operational_state === "online");
       return step.label === "Node pool" ? online.length >= 3 : Boolean(selectedLabNode(context)?.operational_state === "online");
     }
+    case "nodePool": return d09NodePoolVerified(context, environmentId);
     case "policy": return Boolean(environmentId && (context.policies || []).some((item) => item.environment_id === environmentId));
     case "runtimeIdentity": {
+      if (lab.id === "d10-offline-continuity") {
+        const identity = context.runtimeIdentity?.identity;
+        const scopes = (identity?.attachments || []).map((value) => String(value).toLowerCase());
+        return Boolean(identity && identity.status === "active" && identity.workloadId === workloadId && ["l1","l2","l3","l4","l5","mcp","l6"].every((id) => scopes.includes(id)));
+      }
       const required = requiredRuntimeIdentityAttachment(lab);
       return required ? runtimeIdentityVerified(context, workloadId, required) : false;
     }
     case "runtimeTarget": return l3RuntimeTargetVerified(context, workloadId);
+    case "routing": return d09RoutingVerified(context, environmentId, workloadId);
+    case "failover": return d09ReceiptVerified(context, environmentId, workloadId);
+    case "continuity": return d10ContinuityContractVerified(context, environmentId);
+    case "offlineContinuity": return d10ReceiptVerified(context, environmentId, workloadId);
+    case "replay": return d10ReceiptVerified(context, environmentId, workloadId);
     case "provider": {
       const routes = (context.connections || []).filter((item) => item.workload_id === workloadId && item.status !== "paused");
       const readyRoutes = Number(context.attachments?.counts?.readyRoutes || 0);
@@ -570,6 +744,14 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
       return attachmentVerified(step, context);
     }
     case "behavior": {
+      if (lab.id === "d09-fleet-failover") {
+        const l2 = context.attachments?.levels?.find((item) => String(item.id || item.level || "").toLowerCase() === "l2");
+        return d09ReceiptVerified(context, environmentId, workloadId) && Number(l2?.evidence?.total || 0) >= 4;
+      }
+      if (lab.id === "d10-offline-continuity") {
+        const ids = ["l1","l2","l3","l4","l5","mcp","l6"] as const;
+        return d10ReceiptVerified(context, environmentId, workloadId) && ids.every((id) => Boolean(context.attachments?.levels?.some((item) => String(item.id || item.level || "").toLowerCase() === id && Number(item.evidence?.total || 0) > 0)));
+      }
       const required = requiredRuntimeIdentityAttachment(lab);
       if (required && !runtimeIdentityVerified(context, workloadId, required)) return false;
       if (lab.id === "d05-l3-model-runtime" && !l3RuntimeTargetVerified(context, workloadId)) return false;
@@ -582,6 +764,25 @@ export function completionVerified(step: LabStep, context: OpenIiContextResponse
     }
     case "proof": {
       if (!workload) return false;
+      if (lab.id === "d09-fleet-failover") {
+        const receipt = context.execution?.d09FleetFailover;
+        return d09ReceiptVerified(context, environmentId, workloadId)
+          && Boolean(receipt && context.correlatedProofs?.some((item) =>
+            item.correlationId === receipt.correlationId
+            && item.proofId === receipt.proofId
+            && (item.workloadId === workloadId || String(item.workloadName || "").trim().toLowerCase() === String(workload.name || workload.slug || workload.id).trim().toLowerCase())
+            && String(item.verification || "").toLowerCase() === "valid"
+            && Number(item.eventCount || 0) >= 4
+          ));
+      }
+      if (lab.id === "d10-offline-continuity") {
+        const receipt = context.execution?.d10OfflineContinuity;
+        const ids = ["l1","l2","l3","l4","l5","mcp","l6"] as const;
+        return d10ReceiptVerified(context, environmentId, workloadId) && Boolean(receipt) && ids.every((id) => {
+          const row = receipt?.boundaries[id];
+          return Boolean(row && context.correlatedProofs?.some((item) => item.correlationId === row.correlationId && item.proofId === row.proofId && (item.workloadId === workloadId || String(item.workloadName || "").trim().toLowerCase() === String(workload.name || workload.slug || workload.id).trim().toLowerCase()) && String(item.verification || "").toLowerCase() === "valid" && Number(item.eventCount || 0) >= Number(row.eventCount || 0)));
+        });
+      }
       const required = requiredRuntimeIdentityAttachment(lab);
       if (required && !runtimeIdentityVerified(context, workloadId, required)) return false;
       if (lab.id === "d05-l3-model-runtime" && !l3RuntimeTargetVerified(context, workloadId)) return false;

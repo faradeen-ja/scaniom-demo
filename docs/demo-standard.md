@@ -22,3 +22,18 @@ Before a Lab can create or mutate environment, workload, Node, policy, attachmen
 Web and CLI credentials remain separate. Their parity is the shared Scaniom Control state, not credential sharing.
 
 Deeper runtime boundaries are least-privilege opt-ins. In particular, D05/L3 must verify a real active model-runtime inventory from Scaniom Control, explicit `l3` workload runtime-identity scope, `runtime_hook` evidence, and an attachment-specific signed proof. It must not infer completion from a configured diagram or from unrelated L1/L2/L4 evidence.
+
+
+## Two-lane documentation contract
+
+Every Lab must document both lanes without mixing them:
+
+1. **Public / native Scaniom flow first** - Workbench, real Control, installed released CLI/SDK/runtime, exact placement/integration, live evidence and proof.
+2. **Internal / engineering acceptance second** - optional `demos/dXX/run.sh` automation for maintainers/CI.
+
+The public Web Start A-Z surface must never display repository `run.sh` commands. Per-Lab READMEs may document the internal harness only under a clearly labeled internal section. The Lab manifest remains the executable source of public steps and commands.
+
+
+## Complete catalog documentation contract
+
+The public documentation surface covers both focused Labs (D00-D12 + Flagship) and all five System Blueprints. System Blueprint definitions remain manifest-owned in `lib/open-ii/labs.ts`, are rendered by Workbench and Web Start A-Z, and have repo guidebooks under `docs/system-blueprints/`. They do not introduce a second execution engine or a public `run.sh` path.

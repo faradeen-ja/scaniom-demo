@@ -1,40 +1,60 @@
-# D03 — L2 Agent SDK · Real Execution
+# D03 - L2 Agent SDK
 
-D03 proves the released TypeScript and Python Scaniom SDKs against a real Scaniom Node/Gate without inventing a second auth, policy, or proof system.
+> **D03 · L2 SDK** · **PUBLIC / NATIVE SCANIOM FIRST** · `run.sh = INTERNAL / ACCEPTANCE ONLY`
 
-The lab reuses the D00/D01/D02 authority and protected scope, preserves the shared B1 managed runtime-identity attachment scope (`l1,l2,l4`), then performs two harmless real semantic consequences:
-
-```text
-TypeScript @scaniom/sdk@0.4.2 ─┐
-                               ├─ copy-once bootstrap → scn_ri_v1 → Node/Gate → local consequence → post-observe
-Python scaniom==0.4.2 ─────────┘
-                                                     ↓
-                                           L2 / sdk evidence
-                                                     ↓
-                                        trajectory + signed proof
+```mermaid
+flowchart LR
+    APP["Agent / app"] --> SDK["L2 SDK"] --> NODE["Node / Gate"] --> CONS["real consequence"]
+    CONS --> OBS["observe"] --> PROOF["trajectory + proof"]
+    classDef immune fill:#132015,stroke:#a9ff54,color:#f0ffe6,stroke-width:2px;
+    classDef oii fill:#0b1416,stroke:#55e6d2,color:#eafffb,stroke-width:2px;
+    classDef evidence fill:#171326,stroke:#a88cff,color:#f2edff,stroke-width:2px;
+    class APP,SDK,NODE,CONS immune;
+    class OBS,PROOF evidence;
 ```
 
-Run from the repository root:
+### Use your own Scaniom names
+
+Commands shown in Workbench resolve the selected real environment/workload/Node. Names such as `scaniom-demo-agent`, `prod-ai-01`, or `open-immune-node` are examples only. Check your own state with:
 
 ```bash
-./demos/d03-l2-agent-sdk/run.sh
+scaniom env list
+scaniom workload list
+scaniom node list
 ```
 
-Defaults reuse the existing public demo scope:
+**Public path:** instrument the real application/agent with released TypeScript or Python SDK. Normal users do not run this directory's shell harness.
 
-- environment: `scaniom-demo-production`
-- workload: `scaniom-demo-agent`
-- Node: `scaniom-demo-node`
-- Node URL: `http://127.0.0.1:8787`
+## Public / native Scaniom flow
 
-Override with `SCANIOM_ENVIRONMENT`, `SCANIOM_WORKLOAD`, `SCANIOM_NODE_NAME`, or `SCANIOM_NODE_URL`.
+```text
+app/agent -> L2 SDK guard -> Scaniom Node/Gate -> consequence -> observe
+                                                       |
+                                               L2 trajectory/proof
+```
 
-The test consequences are local timestamp heartbeat files under `.demo/d03/consequences/`. No provider key is required to prove L2 semantic action gating. Provider routes remain optional when an SDK application also sends model/provider traffic.
+```bash
+npm install @scaniom/sdk@0.4.2
+# or
+python3 -m pip install scaniom==0.4.2
 
-Security boundary:
+scaniom attach l2 --workload "$YOUR_WORKLOAD" --lang typescript
+scaniom runtime identity bootstrap --workload "$YOUR_WORKLOAD" --attachments l1,l2,l4
+scaniom runtime identity status --workload "$YOUR_WORKLOAD"
+```
 
-- Open Immune never stores or renders runtime bootstrap/runtime token values.
-- Each SDK gets a fresh single-use deployment bootstrap through the process environment.
-- The SDK exchanges it for short-lived renewable runtime authority through the Scaniom Node.
-- Provider credentials remain Node/runtime-local.
-- Completion closes only from real L2 (`sdk`) evidence and signed Scaniom proof.
+L2 preserves the shared B1 `l1,l2,l4` identity scope. Provider routes are optional for semantic action gating; they are required only when the application also sends model/provider traffic.
+
+The real application wraps its actual harmless consequence with SDK guard/observe semantics. Provider credentials stay Node/runtime-local.
+
+## Completion
+
+D03 closes only from selected-workload `sdk` pre/post evidence and attachment-specific signed proof.
+
+## Internal / engineering acceptance
+
+The harness runs both released SDKs and local harmless consequences:
+
+```bash
+bash demos/d03-l2-agent-sdk/run.sh
+```

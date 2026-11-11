@@ -30,3 +30,8 @@ This keeps the public workbench honest while still exposing the complete end-to-
 ## System blueprints
 
 The five system families are public Lab definitions: AI SaaS Operations Center, Robot Fleet, Autonomous Lanes, AI Inference Factory and IFOC. They use the current released Scaniom contracts; the old standalone/shim implementation is not reintroduced.
+
+
+## Complete catalog documentation contract
+
+The public documentation surface covers both focused Labs (D00-D12 + Flagship) and all five System Blueprints. System Blueprint definitions remain manifest-owned in `lib/open-ii/labs.ts`, are rendered by Workbench and Web Start A-Z, and have repo guidebooks under `docs/system-blueprints/`. They do not introduce a second execution engine or a public `run.sh` path.
